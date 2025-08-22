@@ -5,6 +5,7 @@ import AcademyCard from "../AcademyCard";
 import FilterDropdown from "../filterdropdown";
 import RatingDropdown from "../ratingdropdown";
 import Link from "next/link";
+import { motion } from "framer-motion";
 
 interface Academy {
   _id?: string;
@@ -121,8 +122,8 @@ export default function AcademySearchPage() {
       <div className="container mx-auto max-w-7xl">
         <DbStatus connected={dbConnected} />
 
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mb-6 text-center sm:text-left">
-          <h1 className="text-4xl font-extrabold text-gray-800">🎓 Find Academies</h1>
+        {/* <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mb-6 text-center sm:text-left">
+          <h1 className="text-4xl font-extrabold text-gray-900 align-middle">🎓 Find Academies</h1>
           <Link
             href="/login?redirect=/academy/new"
             className="w-full sm:w-auto px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-all duration-200 shadow-sm"
@@ -130,8 +131,49 @@ export default function AcademySearchPage() {
           >
             + Add Academy
           </Link>
-        </div>
+        </div> */}
+{/* !---------------------------------------------------------- */}
+     
+     
+ <motion.div
+      initial={{ opacity: 0, y: -50 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.8, ease: "easeOut" }}
+      className="flex flex-col sm:flex-row items-center justify-between gap-3 mb-6 text-center sm:text-left"
+    >
+      {/* Animated Title */}
+      <motion.h1
+        initial={{ scale: 0.8, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ duration: 0.6, delay: 0.2, type: "spring", stiffness: 100 }}
+        className="text-4xl font-extrabold text-gray-900 flex items-center gap-2"
+      >
+        <span className="animate-bounce">🎓</span>
+        Find Academies
+      </motion.h1>
 
+      {/* Animated Button */}
+      <motion.div
+        initial={{ opacity: 0, x: 50 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.6, delay: 0.4 }}
+      >
+        <Link
+          href="/login?redirect=/academy/new"
+          className="group relative inline-flex items-center justify-center w-full sm:w-auto px-5 py-2.5 rounded-xl 
+          bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 
+          text-white font-semibold shadow-lg hover:scale-105 hover:shadow-2xl 
+          transition-all duration-300 ease-out"
+          title="Login required"
+        >
+          <span className="absolute inset-0 w-full h-full rounded-xl bg-indigo-600 opacity-0 group-hover:opacity-20 transition duration-300" />
+          <span className="relative z-10">+ Add Academy</span>
+        </Link>
+      </motion.div>
+    </motion.div>
+
+
+ {/* ---------------     */}
         <div className="max-w-3xl mx-auto mb-6 space-y-3">
           <input
             type="text"
