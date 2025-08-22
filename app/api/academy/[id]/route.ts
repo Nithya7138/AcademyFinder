@@ -1,14 +1,15 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import dbConnect from "../../../../lib/mongodb";
 import Academidata from "../../../../models/Academy";
 import mongoose from "mongoose";
 
-export async function GET(_req: Request, { params }: { params: { id: string } }) {
+export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     await dbConnect();
-    const { id } = params;
+    const { id } = await params;
 
-    const conditions: any[] = [{ id }];
+    type Condition = { id: string } | { _id: mongoose.Types.ObjectId };
+    const conditions: Condition[] = [{ id }];
     if (mongoose.Types.ObjectId.isValid(id)) {
       conditions.push({ _id: new mongoose.Types.ObjectId(id) });
     }
@@ -20,7 +21,8 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
     }
 
     return NextResponse.json(doc, { status: 200 });
-  } catch (error: any) {
-    return NextResponse.json({ error: error?.message || "Unknown error" }, { status: 500 });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

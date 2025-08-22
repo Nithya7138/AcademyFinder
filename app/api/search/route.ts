@@ -125,25 +125,32 @@ export async function GET(req: Request) {
         { results, page, limit, total, totalPages },
         { status: 200 }
       );
-    } catch (geoErr: any) {
+    } catch (geoErr: unknown) {
       // If geo index is missing or data lacks proper coordinates, fall back to non-geo query
-      const msg = String(geoErr?.message || "");
+      const msg =
+        geoErr instanceof Error
+          ? geoErr.message
+          : typeof geoErr === "string"
+          ? geoErr
+          : "";
       const looksLikeGeoIndexIssue = /2dsphere|geoNear|index|near must be a point/i.test(msg);
       if (looksLikeGeoIndexIssue) {
         // Fallback: fetch non-geo filtered results, then if lat/lng provided, filter + sort by distance in memory
-        const nonGeo = await Academidata.find(query).lean();
+        // Narrowed type for geo operations
+        type GeoDoc = { location?: { coordinates?: [number, number] } };
+        const nonGeo = (await Academidata.find(query).lean()) as GeoDoc[];
         if (hasGeo) {
-          const within = nonGeo
-            .map((doc: any) => {
-              const coords = doc?.location?.coordinates; 
+          const pairs = nonGeo
+            .map((doc): { doc: GeoDoc; dKm: number } | null => {
+              const coords = doc?.location?.coordinates;
               if (!Array.isArray(coords) || coords.length !== 2) return null;
               const dKm = haversineKm(lat, lng, coords[1], coords[0]);
               return { doc, dKm };
             })
-            .filter(Boolean)
-            .filter((x: any) => x.dKm <= radiusKm)
-            .sort((a: any, b: any) => a.dKm - b.dKm)
-            .map((x: any) => x.doc);
+            .filter((p): p is { doc: GeoDoc; dKm: number } => p !== null)
+            .filter((p) => p.dKm <= radiusKm)
+            .sort((a, b) => a.dKm - b.dKm);
+          const within = pairs.map((p) => p.doc);
           const total = within.length;
           const totalPages = Math.max(1, Math.ceil(total / limit));
           const results = within.slice(skip, skip + limit);
@@ -162,7 +169,8 @@ export async function GET(req: Request) {
       }
       throw geoErr;
     }
-  } catch (error: any) {
-    return NextResponse.json({ error: error?.message || "Unknown error" }, { status: 500 });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    return NextResponse.json({ error: message || "Unknown error" }, { status: 500 });
   }
 }

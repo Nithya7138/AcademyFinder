@@ -62,7 +62,7 @@ export default function NewAcademyPage() {
 
   const addTrainer = () => update("trainers", [...form.trainers, { name: "", experience: "", specialization: "" }]);
   const removeTrainer = (idx: number) => update("trainers", form.trainers.filter((_, i) => i !== idx));
-  const setTrainer = (idx: number, field: keyof Trainer, value: any) => {
+  const setTrainer = (idx: number, field: keyof Trainer, value: string | number | "") => {
     const copy = form.trainers.slice();
     // coerce experience to number or ""
     copy[idx] = { ...copy[idx], [field]: field === "experience" ? (value === "" ? "" : Number(value)) : value } as Trainer;
@@ -157,8 +157,14 @@ export default function NewAcademyPage() {
       setSuccess("Academy created successfully.");
       // Redirect to list or detail page
       setTimeout(() => router.push("/academy"), 800);
-    } catch (err: any) {
-      setError(err.message || "Something went wrong");
+    } catch (err: unknown) {
+      let message = "Something went wrong";
+      if (err instanceof Error) {
+        message = err.message;
+      } else if (typeof err === "string") {
+        message = err;
+      }
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -190,7 +196,7 @@ export default function NewAcademyPage() {
             </label>
             <label>
               <div>Type *</div>
-              <select value={form.type} onChange={(e) => update("type", e.target.value as any)} required style={{ width: "100%" }}>
+              <select value={form.type} onChange={(e) => update("type", e.target.value as FormState["type"])} required style={{ width: "100%" }}>
                 <option value="">Select</option>
                 <option value="Art">Art</option>
                 <option value="Sports">Sports</option>

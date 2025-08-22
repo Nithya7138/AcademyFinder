@@ -14,7 +14,7 @@ export default function EnquiryPage() {
 
   const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setForm((f) => ({ ...f, [name]: value }));
+    setForm((prev: typeof form) => ({ ...prev, [name]: value }));
   };
 
   const onSubmit = async (e: React.FormEvent) => {
@@ -31,8 +31,9 @@ export default function EnquiryPage() {
       if (!res.ok) throw new Error(data?.error || "Submission failed");
       setMessage("Enquiry submitted successfully!");
       setForm({ name: "", email: "", phone: "", interest: "", batch_time: "" });
-    } catch (err: any) {
-      setMessage(err?.message || "Something went wrong");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Something went wrong";
+      setMessage(msg);
     } finally {
       setSubmitting(false);
     }

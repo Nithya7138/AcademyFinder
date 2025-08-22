@@ -108,7 +108,8 @@ export default async function AcademyDetailPage({ params }: PageProps) {
 
   const { id } = params;
 
-  const conditions: any[] = [{ id }];
+  type IdCondition = { id: string } | { _id: mongoose.Types.ObjectId };
+  const conditions: IdCondition[] = [{ id }];
   if (mongoose.Types.ObjectId.isValid(id)) {
     conditions.push({ _id: new mongoose.Types.ObjectId(id) });
   }

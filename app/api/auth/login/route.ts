@@ -19,7 +19,8 @@ export async function POST(req: Request) {
       return res;
     }
     return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message || "Bad request" }, { status: 400 });
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : "Bad request";
+    return NextResponse.json({ error:message }, { status: 400 });
   }
 }

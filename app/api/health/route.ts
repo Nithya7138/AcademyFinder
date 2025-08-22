@@ -14,9 +14,9 @@ export async function GET() {
       },
       { status: 200 }
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
-      { ok: false, connected: false, error: error?.message || "Unknown error" },
+      { ok: false, connected: false, error: error instanceof Error ? error.message : "Unknown error" },
       { status: 500 }
     );
   }

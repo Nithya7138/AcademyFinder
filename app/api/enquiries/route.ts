@@ -14,7 +14,14 @@ export async function POST(req: Request) {
 
     const created = await Enquiry.create({ name, email, phone, interest, batch_time });
     return NextResponse.json(created, { status: 201 });
-  } catch (err: any) {
-    return NextResponse.json({ error: err?.message || "Failed to create enquiry" }, { status: 500 });
+  } catch (error: unknown) {
+    // Safely derive an error message without using 'any'
+    const message =
+      error instanceof Error
+        ? error.message
+        : typeof error === "string"
+        ? error
+        : "Failed to create enquiry";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
