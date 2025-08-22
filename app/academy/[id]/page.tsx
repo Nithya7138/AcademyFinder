@@ -97,7 +97,6 @@
 import dbConnect from "../../../lib/mongodb";
 import Academidata from "../../../models/Academy";
 import Link from "next/link";
-import returnto from "../../../app/AcademyCard"
 import mongoose from "mongoose";
 
 interface PageProps {
@@ -143,7 +142,7 @@ export default async function AcademyDetailPage({ params }: PageProps) {
     return (
       <div className="min-h-screen bg-gray-50 p-6 md:p-10">
         <div className="max-w-3xl mx-auto text-center">
-          <Link href={returnto} className="inline-block text-indigo-600 hover:text-indigo-800 transition">
+          <Link href="/AcademyCard" className="inline-block text-indigo-600 hover:text-indigo-800 transition">
             ← Back
           </Link>
           <h1 className="text-2xl font-semibold mt-6 text-gray-800">Academy not found</h1>
