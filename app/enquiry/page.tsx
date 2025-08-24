@@ -46,7 +46,7 @@ export default function EnquiryPage() {
       <div className="container mx-auto max-w-3xl px-6 md:px-10 py-10">
         <div className="mb-6 text-center">
           <h1 className="text-3xl md:text-4xl font-semibold tracking-tight text-slate-900">Enquiry Form</h1>
-          <p className="text-slate-500 mt-1">Tell us a bit about you and your interest. We'll get back soon.</p>
+          <p className="text-slate-500 mt-1">Tell us a bit about you and your interest. We will get back soon.</p>
         </div>
 
         <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-6 md:p-8">
