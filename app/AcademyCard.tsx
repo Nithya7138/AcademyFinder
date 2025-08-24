@@ -21,9 +21,14 @@ export default function AcademyCard({ academy }: { academy: Academy }) {
   const [authed, setAuthed] = useState(false);
 
   useEffect(() => {
-    try {
-      setAuthed(document.cookie.includes("auth=ok"));
-    } catch {}
+    const run = async () => {
+      try {
+        const r = await fetch("/api/auth/status", { cache: "no-store" });
+        const j = await r.json();
+        setAuthed(Boolean(j?.authed));
+      } catch {}
+    };
+    run();
   }, []);
 
   async function handleDelete() {

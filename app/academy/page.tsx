@@ -47,9 +47,16 @@ export default function AcademySearchPage() {
   const [radiusKm, setRadiusKm] = useState(10);
   const [authed, setAuthed] = useState(false);
 
-  // Check auth from cookie
+  // Check auth from server
   useEffect(() => {
-    try { setAuthed(document.cookie.includes("auth=ok")); } catch {}
+    const run = async () => {
+      try {
+        const r = await fetch("/api/auth/status", { cache: "no-store" });
+        const j = await r.json();
+        setAuthed(Boolean(j?.authed));
+      } catch {}
+    };
+    run();
   }, []);
 
   // Pagination state
