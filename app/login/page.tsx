@@ -2,7 +2,7 @@
 
 import React, { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { User, Lock } from "lucide-react"; // icons
+import { User, Lock } from "lucide-react"; 
 
 function LoginForm() {
   const router = useRouter();
@@ -40,24 +40,25 @@ function LoginForm() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 p-6">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8 space-y-6">
-        {/* Logo / Title */}
+      <div className="w-full max-w-md rounded-2xl border border-white/20 bg-white/90 backdrop-blur-md shadow-xl p-8 space-y-6">
+      
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-gray-900">Welcome Back</h1>
-          <p className="text-gray-500 mt-1">Sign in to continue</p>
+          <h1 className="text-3xl font-bold text-slate-900">Welcome Back</h1>
+          <p className="text-slate-500 mt-1">Login in to continue</p>
         </div>
 
         {error && (
-          <div className="p-3 rounded-lg bg-red-100 text-red-700 border border-red-300 text-sm">
+          <div className="p-3 rounded-lg bg-red-50 text-red-700 border border-red-200 text-sm">
             {error}
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
+        
           <div className="relative">
-            <User className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-500 border-blue-500" size={18} />
+            <User className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
             <input
-              className="w-full border rounded-lg pl-10 pr-3 py-2 focus:outline-red-500 focus:ring-2  border-blue-800 text-blue-500"
+              className="w-full h-11 rounded-lg border border-slate-300 bg-white px-10 pr-3 text-slate-800 placeholder:text-slate-400 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 outline-none"
               placeholder="Username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
@@ -66,12 +67,12 @@ function LoginForm() {
             />
           </div>
 
-          {/* Password */}
+
           <div className="relative">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-indigo-400" size={18} />
+            <Lock className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
             <input
               type="password"
-              className="w-full border rounded-lg pl-10 pr-3 py-2 focus:outline-red-00 focus:ring-2  border-blue-800 text-blue-500"
+              className="w-full h-11 rounded-lg border border-slate-300 bg-white px-10 pr-3 text-slate-800 placeholder:text-slate-400 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 outline-none"
               placeholder="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -79,25 +80,15 @@ function LoginForm() {
             />
           </div>
 
-          {/* Button */}
+
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-indigo-600 text-white rounded-lg py-2 font-medium shadow-md hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-400 disabled:opacity-60 transition"
+            className="w-full bg-indigo-600 text-white rounded-lg py-2.5 font-medium shadow-sm hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-400 disabled:opacity-60 transition"
           >
-            {loading ? "Signing in..." : "Sign in"}
+            {loading ? "Logging in..." : "Log in"}
           </button>
         </form>
-
-        {/* Footer links */}
-        <div className="text-sm text-center text-gray-500">
-          <p>
-            Don’t have an account?{" "}
-            <a href="/signup" className="text-indigo-600 hover:underline">
-              Sign up
-            </a>
-          </p>
-        </div>
       </div>
     </div>
   );

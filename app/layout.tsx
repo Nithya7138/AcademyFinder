@@ -26,7 +26,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased animated-bg min-h-screen`}
       >
         {children}
         {/* Global footer so Enquiry link is visible site-wide */}

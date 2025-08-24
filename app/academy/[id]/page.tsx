@@ -155,7 +155,7 @@ export default async function AcademyDetailPage({ params }: PageProps) {
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 p-6 md:p-10">
       <div className="max-w-3xl mx-auto bg-white rounded-2xl shadow-lg p-8">
         {/* Back Link */}
-        <Link href="/" className="inline-block text-indigo-600 hover:text-indigo-800 transition">
+        <Link href="/academy" className="inline-block text-indigo-600 hover:text-indigo-800 transition">
           ← Back
         </Link>
 

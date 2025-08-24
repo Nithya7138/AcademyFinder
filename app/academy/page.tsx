@@ -6,6 +6,8 @@ import FilterDropdown from "../filterdropdown";
 import RatingDropdown from "../ratingdropdown";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import type { Variants } from "framer-motion";
+
 
 interface Academy {
   _id?: string;
@@ -18,6 +20,22 @@ interface Academy {
   sportsprogram?: { sport_name: string; level: string }[];
 }
 
+// Subtle, professional animation presets
+const fadeContainer: Variants = {
+  hidden: { opacity: 0 },
+  show: { opacity: 1, transition: { when: "beforeChildren", staggerChildren: 0.06 } },
+};
+
+const fadeItem: Variants = {
+  hidden: { opacity: 0, y: 10 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.28, ease: "easeOut" } },
+};
+
+const gridItem: Variants = {
+  hidden: { opacity: 0, y: 8, scale: 0.98 },
+  show: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.25, ease: "easeOut" } },
+};
+
 export default function AcademySearchPage() {
   const [academies, setAcademies] = useState<Academy[]>([]);
   const [loading, setLoading] = useState(true);
@@ -26,7 +44,13 @@ export default function AcademySearchPage() {
   const [typeFilter, setTypeFilter] = useState("all");
   const [minRating, setMinRating] = useState("0");
   const [nearby, setNearby] = useState<{ lat: number; lng: number } | null>(null);
-  const [radiusKm, setRadiusKm] = useState(50);
+  const [radiusKm, setRadiusKm] = useState(10);
+  const [authed, setAuthed] = useState(false);
+
+  // Check auth from cookie
+  useEffect(() => {
+    try { setAuthed(document.cookie.includes("auth=ok")); } catch {}
+  }, []);
 
   // Pagination state
   const [page, setPage] = useState(1);
@@ -82,165 +106,181 @@ export default function AcademySearchPage() {
     setPage(1);
   }, [query, typeFilter, minRating, nearby, radiusKm]);
 
-  // Handle geolocation with better errors and permissions
+  // Always fetch live location on click (no caching)
   async function handleNearMeClick() {
-    if (!('geolocation' in navigator)) {
-      alert('Geolocation is not supported by your browser');
+    if (!("geolocation" in navigator)) {
+      alert("Geolocation is not supported by your browser");
       return;
     }
 
     try {
       // Check permission state if supported
-      if (typeof navigator.permissions?.query === 'function') {
+      if (typeof navigator.permissions?.query === "function") {
         try {
-          const status = await navigator.permissions.query({ name: 'geolocation' as PermissionName });
-          if (status.state === 'denied') {
-            alert('Location permission is blocked. Enable it in your browser settings for this site and try again.');
+          const status = await navigator.permissions.query({ name: "geolocation" as PermissionName });
+          if (status.state === "denied") {
+            alert("Location permission is blocked. Enable it in your browser settings for this site and try again.");
             return;
           }
         } catch {}
       }
 
       navigator.geolocation.getCurrentPosition(
-        (pos) => setNearby({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+        (pos) => {
+          const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+          setNearby(coords);
+        },
         (err) => {
-          let message = 'Unable to get your location';
-          if (err?.code === err.PERMISSION_DENIED) message = 'Permission denied. Please allow location access for this site and try again.';
-          else if (err?.code === err.POSITION_UNAVAILABLE) message = 'Location unavailable. Please check your device/location settings and try again.';
-          else if (err?.code === err.TIMEOUT) message = 'Location request timed out. Try again or move to an area with better signal.';
+          let message = "Unable to get your location";
+          if (err?.code === err.PERMISSION_DENIED) message = "Permission denied. Please allow location access for this site and try again.";
+          else if (err?.code === err.POSITION_UNAVAILABLE) message = "Location unavailable. Please check your device/location settings and try again.";
+          else if (err?.code === err.TIMEOUT) message = "Location request timed out. Try again or move to an area with better signal.";
           alert(message);
         },
-        { enableHighAccuracy: true, maximumAge: 60000, timeout: 10000 }
+        { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 }
       );
     } catch {
-      alert('Unexpected error getting location');
+      alert("Unexpected error getting location");
     }
   }
 
+  const skeletons = Array.from({ length: 8 });
+
   return (
-    <div className="min-h-screen bg-gray-50 p-6 md:p-10">
-      <div className="container mx-auto max-w-7xl">
+    <div className="min-h-screen animated-bg">
+      <div className="container mx-auto max-w-7xl px-6 md:px-10 py-8">
         <DbStatus connected={dbConnected} />
 
-        {/* <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mb-6 text-center sm:text-left">
-          <h1 className="text-4xl font-extrabold text-gray-900 align-middle">🎓 Find Academies</h1>
-          <Link
-            href="/login?redirect=/academy/new"
-            className="w-full sm:w-auto px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-all duration-200 shadow-sm"
-            title="Login required"
-          >
-            + Add Academy
-          </Link>
-        </div> */}
-{/* !---------------------------------------------------------- */}
-     
-     
- <motion.div
-      initial={{ opacity: 0, y: -50 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.8, ease: "easeOut" }}
-      className="flex flex-col sm:flex-row items-center justify-between gap-3 mb-6 text-center sm:text-left"
-    >
-      {/* Animated Title */}
-      <motion.h1
-        initial={{ scale: 0.8, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{ duration: 0.6, delay: 0.2, type: "spring", stiffness: 100 }}
-        className="text-4xl font-extrabold text-gray-900 flex items-center gap-2"
-      >
-        <span className="animate-bounce">🎓</span>
-        Find Academies
-      </motion.h1>
-
-      {/* Animated Button */}
-      <motion.div
-        initial={{ opacity: 0, x: 50 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.6, delay: 0.4 }}
-      >
-        <Link
-          href="/login?redirect=/academy/new"
-          className="group relative inline-flex items-center justify-center w-full sm:w-auto px-5 py-2.5 rounded-xl 
-          bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 
-          text-white font-semibold shadow-lg hover:scale-105 hover:shadow-2xl 
-          transition-all duration-300 ease-out"
-          title="Login required"
+        {/* Header */}
+        <motion.div
+          variants={fadeContainer}
+          initial="hidden"
+          animate="show"
+          className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between mb-8"
         >
-          <span className="absolute inset-0 w-full h-full rounded-xl bg-indigo-600 opacity-0 group-hover:opacity-20 transition duration-300" />
-          <span className="relative z-10">+ Add Academy</span>
-        </Link>
-      </motion.div>
-    </motion.div>
+          <motion.div variants={fadeItem} className="space-y-1">
+            <h1 className="text-3xl md:text-4xl font-semibold tracking-tight text-slate-900">Find Academies</h1>
+            <p className="text-slate-500 text-sm md:text-base">Search, filter and discover academies near you.</p>
+          </motion.div>
 
+          <motion.div variants={fadeItem}>
+            <Link
+              href={authed ? "/academy/new" : "/login?redirect=/academy/new"}
+              className="inline-flex items-center justify-center rounded-lg border border-transparent bg-indigo-600 px-4 py-2.5 text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 transition"
+              title={authed ? "Add a new academy" : "Login required"}
+            >
+              + Add Academy
+            </Link>
+          </motion.div>
+        </motion.div>
 
- {/* ---------------     */}
-        <div className="max-w-3xl mx-auto mb-6 space-y-3">
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search academy, city or program..."
-            className="w-full p-3 border rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 border-blue-500 text-blue-500"
-          />
-          <div className="flex flex-col sm:flex-row sm:items-center sm:flex-wrap gap-3">
-            <FilterDropdown filter={typeFilter} setFilter={setTypeFilter} />
-            <RatingDropdown minRating={minRating} setMinRating={setMinRating} />
-
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:flex-wrap w-full">
-              <button
-                onClick={handleNearMeClick}
-                className="w-full sm:w-auto px-4 py-2 rounded-lg border border-indigo-500 text-indigo-600 h-12 transition-all duration-200 hover:bg-indigo-50 hover:shadow-md active:scale-95 focus:outline-none focus:ring-2 focus:ring-indigo-300 motion-reduce:transition-none motion-reduce:transform-none"
-              >
-                {nearby ? "By my location" : "Near me"}
-              </button>
-              <input 
-                type="number"
-                min={1}
-                max={200}
-                value={radiusKm}
-                onChange={(e) => setRadiusKm(Number(e.target.value))}
-                className="w-full sm:w-24 px-3 py-2 rounded-lg border border-blue-500 h-12 text-blue-600 focus:border-blue-500"
-                title="Radius (km)"
-                placeholder="km"
-              />
-              <button
-                onClick={() => setNearby(null)}
-                className="w-full sm:w-auto px-3 py-2 rounded-lg border border-blue-500 text-blue-600 hover:bg-gray-50 h-12"
-              >
-                Clear
-              </button>
+        {/* Controls */}
+        <motion.div
+          variants={fadeContainer}
+          initial="hidden"
+          animate="show"
+          className="mb-8"
+        >
+          <motion.div
+            variants={fadeItem}
+            className="w-full rounded-xl border border-slate-200 bg-white/90 backdrop-blur-sm shadow-sm p-4 md:p-5 space-y-4"
+          >
+            <div className="grid grid-cols-1 gap-3">
+              <div className="relative">
+                <input
+                  type="text"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Search academy, city or program..."
+                  className="w-full h-12 rounded-lg border border-slate-300 bg-white px-4 pr-10 text-slate-800 placeholder:text-slate-400 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/40"
+                />
+              </div>
             </div>
-          </div>
-        </div>
 
+            <div className="flex flex-row items-center gap-3 flex-nowrap overflow-x-auto whitespace-nowrap">
+              <div className="shrink-0">
+                <FilterDropdown filter={typeFilter} setFilter={setTypeFilter} />
+              </div>
+              <div className="shrink-0">
+                <RatingDropdown minRating={minRating} setMinRating={setMinRating} />
+              </div>
+
+              <div className="flex flex-row items-center gap-2 flex-nowrap shrink-0">
+                <button
+                  onClick={handleNearMeClick}
+                  className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 h-12 text-slate-700 hover:bg-slate-50 hover:shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 transition shrink-0"
+                >
+                  {nearby ? "By my location" : "Near me"}
+                </button>
+                <input
+                  type="number"
+                  min={1}
+                  max={200}
+                  value={radiusKm}
+                  onChange={(e) => setRadiusKm(Number(e.target.value))}
+                  className="w-28 h-12 rounded-lg border border-slate-300 bg-white px-3 text-slate-700 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/40 shrink-0"
+                  title="Radius (km)"
+                  placeholder="km"
+                />
+                <button
+                  onClick={() => {
+                    setNearby(null);
+                    try { localStorage.removeItem("nearbyLocation"); } catch {}
+                  }}
+                  className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-3 h-12 text-slate-700 hover:bg-slate-50 hover:shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 transition shrink-0"
+                >
+                  Clear
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        </motion.div>
+
+        {/* Results */}
         {loading ? (
-          <p className="text-center text-gray-600 animate-pulse">Loading...</p>
-        ) : academies.length === 0 ? (
-          <p className="text-center text-gray-500">No academies found.</p>
-        ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
-            {academies.map((academy) => (
-              <AcademyCard key={academy.id ?? academy._id} academy={academy} />
+            {skeletons.map((_, i) => (
+              <div key={i} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                <div className="h-40 w-full rounded-lg bg-slate-200 animate-pulse" />
+                <div className="mt-4 h-4 w-2/3 bg-slate-200 rounded animate-pulse" />
+                <div className="mt-2 h-4 w-1/2 bg-slate-200 rounded animate-pulse" />
+                <div className="mt-4 h-9 w-full bg-slate-200 rounded-lg animate-pulse" />
+              </div>
             ))}
           </div>
+        ) : academies.length === 0 ? (
+          <p className="text-center text-slate-500">No academies found.</p>
+        ) : (
+          <motion.div
+            variants={fadeContainer}
+            initial="hidden"
+            animate="show"
+            className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6"
+          >
+            {academies.map((academy) => (
+              <motion.div key={academy.id ?? academy._id} variants={gridItem} className="h-full">
+                <AcademyCard academy={academy} />
+              </motion.div>
+            ))}
+          </motion.div>
         )}
 
         {/* Pagination controls */}
-        <div className="mt-8 flex items-center justify-center gap-2 flex-wrap">
+        <div className="mt-10 flex items-center justify-center gap-2 flex-wrap">
           <button
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page <= 1}
-            className="w-full sm:w-auto px-4 py-2 rounded-lg border disabled:opacity-50 transition-all duration-200 hover:shadow active:scale-95"
+            className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-700 disabled:opacity-50 hover:bg-slate-50 hover:shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 transition"
           >
             Prev
           </button>
-          <span className="text-sm text-gray-600 text-center w-full sm:w-auto">
+          <span className="text-sm text-slate-600 text-center w-full sm:w-auto">
             Page {page} of {totalPages}
           </span>
           <button
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             disabled={page >= totalPages}
-            className="w-full sm:w-auto px-4 py-2 rounded-lg border disabled:opacity-50 transition-all duration-200 hover:shadow active:scale-95 border-blue-500 text-blue-600"
+            className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-700 disabled:opacity-50 hover:bg-slate-50 hover:shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 transition"
           >
             Next
           </button>
