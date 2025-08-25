@@ -1,4 +1,5 @@
 "use client";
+// Purpose: Small status badge indicating database connectivity
 
 interface DbStatusProps {
   connected: boolean | null;

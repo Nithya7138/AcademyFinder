@@ -1,4 +1,5 @@
 "use client";
+// Purpose: Login page to authenticate and redirect to a protected route (default to create academy)
 
 import React, { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -42,9 +43,24 @@ function LoginForm() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 p-6">
       <div className="w-full max-w-md rounded-2xl border border-white/20 bg-white/90 backdrop-blur-md shadow-xl p-8 space-y-6">
       
-        <div className="text-center">
-          <h1 className="text-3xl font-bold text-slate-900">Welcome Back</h1>
-          <p className="text-slate-500 mt-1">Login in to continue</p>
+        <div className="flex items-start justify-between gap-3">
+          <div className="text-left">
+            <h1 className="text-3xl font-bold text-slate-900">Welcome Back</h1>
+            <p className="text-slate-500 mt-1">Login in to continue</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              if (typeof window !== 'undefined' && window.history.length > 1) {
+                router.back();
+              } else {
+                router.push('/academy');
+              }
+            }}
+            className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-700 hover:bg-slate-50 shadow-sm"
+          >
+            ← Back
+          </button>
         </div>
 
         {error && (

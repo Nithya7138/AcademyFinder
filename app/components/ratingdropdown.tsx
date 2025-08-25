@@ -1,4 +1,5 @@
 "use client";
+// Purpose: Dropdown to pick minimum rating filter for academies
 
 interface RatingDropdownProps {
   minRating: string;

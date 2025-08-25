@@ -51,7 +51,7 @@ export default function EnquiryPage() {
 
         <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-6 md:p-8">
           <form onSubmit={onSubmit} className="space-y-6">
-            {/* Grid inputs */}
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <label className="block">
                 <span className="text-sm text-slate-700">Name <span className="text-rose-600">*</span></span>
@@ -116,7 +116,7 @@ export default function EnquiryPage() {
               </label>
             </div>
 
-            {/* Submit */}
+
             <div className="pt-2">
               <button
                 type="submit"
@@ -128,7 +128,7 @@ export default function EnquiryPage() {
             </div>
           </form>
 
-          {/* Message */}
+
           {message && (
             <div
               role="status"

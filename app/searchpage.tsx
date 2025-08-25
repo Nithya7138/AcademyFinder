@@ -1,10 +1,10 @@
 "use client";
-// Purpose: Academies listing page with filters, fee range, sorting, location radius and pagination
+// Purpose: Full search page with filters, fee range, sorting, pagination and results grid
 import { useEffect, useState } from "react";
-import DbStatus from "../components/DbStatus";
-import AcademyCard from "../components/AcademyCard";
-import FilterDropdown from "../components/filterdropdown";
-import RatingDropdown from "../components/ratingdropdown";
+import DbStatus from "./components/DbStatus";
+import AcademyCard from "./components/AcademyCard";
+import FilterDropdown from "./components/filterdropdown";
+import RatingDropdown from "./components/ratingdropdown";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import type { Variants } from "framer-motion";
@@ -16,9 +16,9 @@ interface Academy {
   name: string;
   type: string;
   phone: string;
-  address?: { city?: string };
-  artprogram?: { art_name: string; level: string }[];
-  sportsprogram?: { sport_name: string; level: string }[];
+  address?: { city?: string ,contry?:string,state?:string};
+  artprogram?: { art_name: string; level: string;fees_per_month:number }[];
+  sportsprogram?: { sport_name: string; level: string; fees_per_month:number }[];
 }
 
 // Subtle, professional animation presets
@@ -46,12 +46,15 @@ export default function AcademySearchPage() {
   const [minRating, setMinRating] = useState("0");
   const [nearby, setNearby] = useState<{ lat: number; lng: number } | null>(null);
   const [radiusKm, setRadiusKm] = useState(10);
+  const [sort, setSort] = useState<"relevance" | "distance" | "newest" | "started_newest" | "started_oldest">("relevance");
   const [authed, setAuthed] = useState(false);
 
-  // Fee and sort controls
+  // New search fields
+  const [stateQuery, setStateQuery] = useState("");
+  const [countryQuery, setCountryQuery] = useState("");
+  const [idQuery, setIdQuery] = useState("");
   const [minFee, setMinFee] = useState("");
   const [maxFee, setMaxFee] = useState("");
-  const [sort, setSort] = useState<"relevance" | "newest" | "started_newest" | "started_oldest">("relevance");
 
   // Check auth from server
   useEffect(() => {
@@ -97,6 +100,10 @@ export default function AcademySearchPage() {
           params.set("lng", String(nearby.lng));
           params.set("radiusKm", String(radiusKm));
         }
+        if (stateQuery) params.set("state", stateQuery);
+        if (countryQuery) params.set("country", countryQuery);
+        if (idQuery) params.set("id", idQuery);
+
         const res = await fetch(`/api/search?${params.toString()}`, { cache: "no-store" });
         if (!res.ok) {
           const text = await res.text().catch(() => "");
@@ -114,12 +121,12 @@ export default function AcademySearchPage() {
       }
     };
     fetchAcademies();
-  }, [query, typeFilter, minRating, nearby, radiusKm, page, sort, minFee, maxFee]);
+  }, [query, typeFilter, minRating, nearby, radiusKm, page, sort, stateQuery, countryQuery, idQuery, minFee, maxFee]);
 
-  // Reset to page 1 when filters/search change
+  
   useEffect(() => {
     setPage(1);
-  }, [query, typeFilter, minRating, nearby, radiusKm, sort, minFee, maxFee]);
+  }, [query, typeFilter, minRating, nearby, radiusKm, sort]);
 
   // Always fetch live location on click (no caching)
   async function handleNearMeClick() {
@@ -210,6 +217,29 @@ export default function AcademySearchPage() {
                   className="w-full h-12 rounded-lg border border-slate-300 bg-white px-4 pr-10 text-slate-800 placeholder:text-slate-400 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/40"
                 />
               </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <input
+                  type="text"
+                  value={stateQuery}
+                  onChange={(e) => setStateQuery(e.target.value)}
+                  placeholder="State (contains)"
+                  className="w-full h-11 rounded-lg border border-slate-300 bg-white px-3 text-slate-800 placeholder:text-slate-400 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/40"
+                />
+                <input
+                  type="text"
+                  value={countryQuery}
+                  onChange={(e) => setCountryQuery(e.target.value)}
+                  placeholder="Country (contains)"
+                  className="w-full h-11 rounded-lg border border-slate-300 bg-white px-3 text-slate-800 placeholder:text-slate-400 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/40"
+                />
+                <input
+                  type="text"
+                  value={idQuery}
+                  onChange={(e) => setIdQuery(e.target.value)}
+                  placeholder="Academy ID (exact)"
+                  className="w-full h-11 rounded-lg border border-slate-300 bg-white px-3 text-slate-800 placeholder:text-slate-400 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/40"
+                />
+              </div>
             </div>
 
             <div className="flex flex-row items-center gap-3 flex-nowrap overflow-x-auto whitespace-nowrap">
@@ -219,6 +249,7 @@ export default function AcademySearchPage() {
               <div className="shrink-0">
                 <RatingDropdown minRating={minRating} setMinRating={setMinRating} />
               </div>
+
               <div className="flex flex-row items-center gap-2 flex-nowrap shrink-0">
 
                 <select
@@ -261,6 +292,7 @@ export default function AcademySearchPage() {
                   title="Sort by"
                 >
                   <option value="relevance">Relevance</option>
+                  <option value="distance">Distance (Nearest first)</option>
                   <option value="newest">Newly Added (Most recent)</option>
                   <option value="started_newest">Newly Started (Recent start date)</option>
                   <option value="started_oldest">Early Started (Oldest start date)</option>

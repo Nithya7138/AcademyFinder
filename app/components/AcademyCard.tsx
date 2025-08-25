@@ -1,16 +1,25 @@
 "use client";
+// Purpose: Card component displaying brief academy info with actions (view/edit/delete)
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-interface ArtProgram { art_name: string; level: string; }
-interface SportsProgram { sport_name: string; level: string; }
+interface ArtProgram {
+  art_name: string;
+  level: string;
+  fees_per_month?: number | string;
+}
+interface SportsProgram {
+  sport_name: string;
+  level: string;
+  fees_per_month?: number | string;
+}
 interface Academy {
   _id?: string;
   id?: string;
   name: string;
   type: string;
   phone: string;
-  address?: { city?: string };
+  address?: { city?: string; state?: string; country?: string | null; zip?: string | number };
   artprogram?: ArtProgram[];
   sportsprogram?: SportsProgram[];
   rating?: number;
@@ -78,9 +87,25 @@ export default function AcademyCard({ academy }: { academy: Academy }) {
         </p>
         {academy.address?.city && (
           <p>
-            City: <span className="text-slate-900">{academy.address.city}</span>
+            City: <span className="text-slate-900">{academy.address?.city}</span>
           </p>
         )}
+        {academy.address?.state && (
+          <p>
+            State: <span className="text-slate-900">{academy.address?.state}</span>
+          </p>
+        )}
+        {academy.address && (
+          <span>
+            <p>
+              Country: <span className="text-slate-900">{academy.address.country ?? "null"}</span>
+            </p>
+            <p>
+              Zip Code: <span className="text-slate-900">{academy.address.zip ?? "null"}</span>
+            </p>
+          </span>
+        )}
+
         {academy.rating && (
           <p className="font-semibold">
             Rating: <span className="text-amber-600">{academy.rating} ⭐</span>
@@ -93,7 +118,20 @@ export default function AcademyCard({ academy }: { academy: Academy }) {
           <h3 className="text-lg font-semibold text-green-700">Sports</h3>
           <ul className="mt-1 list-inside list-disc text-slate-700">
             {academy.sportsprogram.map((sp, i) => (
-              <li key={i}>{sp.sport_name}</li>
+              <li key={i}>
+                <span className="font-medium">
+                  {sp.sport_name}
+                </span>
+                {(() => {
+                  const n =
+                    typeof sp.fees_per_month === "string"
+                      ? Number(sp.fees_per_month)
+                      : sp.fees_per_month;
+                  return typeof n === "number" && Number.isFinite(n) ? (
+                    <span className="ml-2 text-slate-600">- ₹{n}</span>
+                  ) : null;
+                })()}
+              </li>
             ))}
           </ul>
         </div>
@@ -104,7 +142,20 @@ export default function AcademyCard({ academy }: { academy: Academy }) {
           <h3 className="text-lg font-semibold text-pink-700">Arts</h3>
           <ul className="mt-1 list-inside list-disc text-slate-700">
             {academy.artprogram.map((ap, i) => (
-              <li key={i}>{ap.art_name}</li>
+              <li key={i}>
+                <span className="font-medium">
+                {ap.art_name}
+                </span>
+                {(() => {
+                  const n =
+                    typeof ap.fees_per_month === "string"
+                      ? Number(ap.fees_per_month)
+                      : ap.fees_per_month;
+                  return typeof n === "number" && Number.isFinite(n) ? (
+                    <span className="ml-2 text-slate-600">- ₹{n}</span>
+                  ) : null;
+                })()}
+              </li>
             ))}
           </ul>
         </div>
@@ -113,7 +164,7 @@ export default function AcademyCard({ academy }: { academy: Academy }) {
       {detailId ? (
         <div className="mt-auto pt-4 space-y-2">
           <Link
-            href={`/academy/${detailId}`}
+            href={`./academy/${detailId}`}
             className="
               inline-flex items-center justify-center gap-2 rounded-lg
               bg-indigo-600 px-5 py-2 text-white font-medium shadow-sm

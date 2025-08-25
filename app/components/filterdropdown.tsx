@@ -1,4 +1,5 @@
 "use client";
+// Purpose: Dropdown for selecting academy type filter (All, Sports, Art)
 
 interface FilterDropdownProps {
   filter: string;

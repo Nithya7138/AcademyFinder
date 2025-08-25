@@ -1,3 +1,4 @@
+// Purpose: Landing page with CTA to the academy search/listing
 import Link from 'next/link'
 
 export default function Home() {

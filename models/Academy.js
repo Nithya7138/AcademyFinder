@@ -1,84 +1,40 @@
-// import mongoose, { Schema } from "mongoose";
-
-// const AddressSchema = new Schema({
-//   line1: { type: String, required: true },
-//   line2: { type: String },
-//   city: { type: String, required: true },
-//   state: { type: String },
-//   zip: { type: String }
-// });
-
-// const Artprogramschema = new Schema({
-//     art_name: { type: String, required: true },
-//     level: { type: String, required: true }
-// }, { id: false }
-// );
-
-// const Sportsprogramschema = new Schema({
-//     sport_name: { type: String, required: true },
-//     level: { type: String, required: true }
-// }, { id: false }
-// );
-
-// const academydataschema = new mongoose.Schema({
-//     id: { type: String, required: true, unique: true },
-//     name: { type: String, required: true },
-//     type: { type: String, required: true, enum: ["Art", "Sports"] },
-//     address: { type: AddressSchema, required: true },
-//     phone: { type: String, required: true },
-//     trainers: {
-//         name: { type: String, required: true },
-//         experience: { type: Number, required: true },
-//         specialization: { type: String, required: true }
-//     },
-//     achievements: { 
-//         award: { type: String },
-//         notable_alumni: { type: [String], required: true },
-//         recognition: { type: String }
-//     },
-//     average_rating: { type:Number, min: 0, max: 5 },
-//     artprogram: [Artprogramschema],
-//     sportsprogram: [Sportsprogramschema],
-// },
-// {
-//     timestamps: { createdAt: "created_at", updatedAt: "updated_at" },
-//     collation: 'academydata'
-// });
-
-// export default mongoose.model("Academydata", academydataschema);
-
-
 
 import mongoose, { Schema } from "mongoose";
 
-// Address Schema
+//! Address Schema
 const AddressSchema = new Schema({
   line1: { type: String, required: true },
-  line2: { type: String },
+  line2: { type: String, required: true },
   city: { type: String, required: true },
-  state: { type: String },
-  zip: { type: String }
+  state: { type: String, required: true },
+  country: { type: String, required: true },
+  zip: { type: String ,required:true},
+  link: { type: String ,required:true}
 });
 
-// Art Program Schema
+//! Art Program Schema
 const ArtProgramSchema = new Schema({
   art_name: { type: String, required: true },
+  fees_per_month: { type: Number, min: 1000, max: 5000, default: 0 },
   level: { type: String, required: true }
 }, { _id: false });
 
-// Sports Program Schema
+//! Sports Program Schema
 const SportsProgramSchema = new Schema({
   sport_name: { type: String, required: true },
+  fees_per_month: { type: Number, min: 1000, max: 5000, default: 0 },
   level: { type: String, required: true }
 }, { _id: false });
 
-// Academy Data Schema
+//! Academy Data Schema
 const AcademyDataSchema = new mongoose.Schema({
   id: { type: String, required: true, unique: true }, // Optional if you want a custom ID
   name: { type: String, required: true },
   type: { type: String, required: true, enum: ["Art", "Sports"] },
   address: { type: AddressSchema, required: true },
   phone: { type: String, required: true },
+  wabsite: { type: String, required: true },
+  academy_startat: { type: Date, required: true },
   trainers: [{
     name: { type: String, required: true },
     experience: { type: Number, required: true },
@@ -89,10 +45,11 @@ const AcademyDataSchema = new mongoose.Schema({
     notable_alumni: { type: [String] },
     recognition: { type: String }
   },
-  average_rating: { type: Number, min: 0, max: 5 },
+
+  average_rating: { type: Number, min: 1, max: 5 },
   artprogram: [ArtProgramSchema],
   sportsprogram: [SportsProgramSchema],
-  // GeoJSON Point for nearby search (required)
+  //! GeoJSON Point for nearby search (required)
   location: {
     type: { type: String, enum: ['Point'], default: 'Point', required: true },
     coordinates: { type: [Number], required: true } // [lng, lat]
@@ -102,10 +59,10 @@ const AcademyDataSchema = new mongoose.Schema({
   collection: "academydata" // ✅ Correct usage
 });
 
-// Ensure geospatial index exists
+//! Ensure geospatial index exists
 AcademyDataSchema.index({ location: "2dsphere" });
 
-// Validate presence and format of coordinates
+//! Validate presence and format of coordinates
 AcademyDataSchema.pre('validate', function(next) {
   const coords = this.location?.coordinates;
   if (!Array.isArray(coords) || coords.length !== 2) {

@@ -1,27 +1,4 @@
-// import Atlas_Db_connection from "../../../lib/mondodb.js";
-// import Academidata from "../../../models/Academy.js";
 
-// export async function connectToDatabase() {
-//     try{
-//         await Atlas_Db_connection();
-//         const body = await request.json();
-//         const academidata = await Academidata.create(body);
-//         return Response.json(academidata);
-
-//     }catch (error) {
-//         console.error("Error connecting to database:", error);
-//     }
-// }
-
-// export async function GET(){
-//     try{
-//         await Atlas_Db_connection();
-//         const academidata = await Academidata.find();
-//         return Response.json(academidata);
-//     }catch (error) {
-//         console.error("Error fetching data:", error);
-//     }
-// }
 
 // app/api/academy/route.js
 import { NextResponse } from "next/server";
@@ -58,6 +35,32 @@ export async function POST(req) {
 
     await Atlas_Db_connection();
     const body = await req.json();
+
+    // Normalize incoming payload per schema
+    const normalizeFees = (v) => {
+      if (v === undefined || v === null) return undefined;
+      const n = typeof v === 'string' ? Number(v) : v;
+      return typeof n === 'number' && !Number.isNaN(n) ? n : undefined;
+    };
+
+    if (Array.isArray(body?.artprogram)) {
+      body.artprogram = body.artprogram.map(p => ({
+        ...p,
+        fees_per_month: normalizeFees(p.fees_per_month),
+      }));
+    }
+    if (Array.isArray(body?.sportsprogram)) {
+      body.sportsprogram = body.sportsprogram.map(p => ({
+        ...p,
+        fees_per_month: normalizeFees(p.fees_per_month),
+      }));
+    }
+
+    // Basic required fields presence
+    if (!body?.id || !body?.name || !body?.type || !body?.phone || !body?.address?.line1 || !body?.address?.city || !body?.address?.country || !Array.isArray(body?.location?.coordinates)) {
+      return NextResponse.json({ error: "Missing required fields per schema" }, { status: 422 });
+    }
+
     const academidata = await Academidata.create(body);
     return NextResponse.json(academidata, { status: 201 });
   } catch (error) {
@@ -74,8 +77,28 @@ export async function PUT(req) {
 
     await Atlas_Db_connection();
     const body = await req.json();
+
+    // Normalize program fees
+    const normalizeFees = (v) => {
+      if (v === undefined || v === null) return undefined;
+      const n = typeof v === 'string' ? Number(v) : v;
+      return typeof n === 'number' && !Number.isNaN(n) ? n : undefined;
+    };
+    if (Array.isArray(body?.artprogram)) {
+      body.artprogram = body.artprogram.map(p => ({ ...p, fees_per_month: normalizeFees(p.fees_per_month) }));
+    }
+    if (Array.isArray(body?.sportsprogram)) {
+      body.sportsprogram = body.sportsprogram.map(p => ({ ...p, fees_per_month: normalizeFees(p.fees_per_month) }));
+    }
+
     const { id } = body;
-    const academidata = await Academidata.findByIdAndUpdate(id, body, { new: true });
+    if (!id) return NextResponse.json({ error: "id is required" }, { status: 422 });
+
+    const academidata = await Academidata.findOneAndUpdate(
+      { $or: [{ id }, { _id: id }] },
+      { $set: body },
+      { new: true }
+    );
     return NextResponse.json(academidata, { status: 200 });
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 400 });

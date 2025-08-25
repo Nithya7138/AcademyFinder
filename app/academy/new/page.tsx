@@ -1,22 +1,34 @@
 "use client";
+// Purpose: Form page to create a new academy with validation and submission to API
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
+import BasicInfo from "./components/BasicInfo";
+import AddressSection from "./components/AddressSection";
+import TrainersSection from "./components/TrainersSection";
+import ArtProgramsSection from "./components/ArtProgramsSection";
+import SportsProgramsSection from "./components/SportsProgramsSection";
+import AchievementsSection from "./components/AchievementsSection";
+import CoordinatesSection from "./components/CoordinatesSection";
 
 type Trainer = { name: string; experience: number | ""; specialization: string };
-type ArtProgram = { art_name: string; level: string };
-type SportsProgram = { sport_name: string; level: string };
+type ArtProgram = { art_name: string; level: string ; fee_per_month: number | "" };
+type SportsProgram = { sport_name: string; level: string ; fee_per_month: number | "" };
 
 type FormState = {
   name: string;
   type: "Art" | "Sports" | "";
   phone: string;
+  wabsite: string; 
+  academy_startat: string; 
   address: {
     line1: string;
-    line2: string;
+    line2: string; 
     city: string;
-    state: string;
-    zip: string;
+    state: string; 
+    Country: string;
+    zip: string; 
+    link: string; 
   };
   average_rating: number | "";
   lat: number | "";
@@ -41,13 +53,15 @@ export default function NewAcademyPage() {
     name: "",
     type: "",
     phone: "",
-    address: { line1: "", line2: "", city: "", state: "", zip: "" },
+    wabsite: "",
+    academy_startat: "",
+    address: { line1: "", line2: "", city: "", state: "", Country: "", zip: "", link: "" },
     average_rating: "",
     lat: "",
     lng: "",
     trainers: [{ name: "", experience: "", specialization: "" }],
-    artprogram: [{ art_name: "", level: "" }],
-    sportsprogram: [{ sport_name: "", level: "" }],
+    artprogram: [{ art_name: "", level: "", fee_per_month: "" }],
+    sportsprogram: [{ sport_name: "", level: "", fee_per_month: "" }],
     achievements: { award: "", notable_alumni: "", recognition: "" },
   });
 
@@ -59,6 +73,12 @@ export default function NewAcademyPage() {
     setForm((prev) => ({ ...prev, address: { ...prev.address, [key]: value } }));
   }
 
+  // Restrict BasicInfo onChange to only the keys it controls to keep strong typing
+  type BasicInfoKeys = "name" | "type" | "phone" | "wabsite" | "academy_startat" | "average_rating";
+  const handleBasicInfoChange = <K extends BasicInfoKeys>(field: K, value: FormState[K]) => {
+    update(field, value);
+  };
+
   const addTrainer = () => update("trainers", [...form.trainers, { name: "", experience: "", specialization: "" }]);
   const removeTrainer = (idx: number) => update("trainers", form.trainers.filter((_, i) => i !== idx));
   const setTrainer = (idx: number, field: keyof Trainer, value: string | number | "") => {
@@ -67,19 +87,27 @@ export default function NewAcademyPage() {
     update("trainers", copy);
   };
 
-  const addArt = () => update("artprogram", [...form.artprogram, { art_name: "", level: "" }]);
+  const addArt = () => update("artprogram", [...form.artprogram, { art_name: "", level: "" , fee_per_month: ""}]);
   const removeArt = (idx: number) => update("artprogram", form.artprogram.filter((_, i) => i !== idx));
-  const setArt = (idx: number, field: keyof ArtProgram, value: string) => {
+  const setArt = (idx: number, field: keyof ArtProgram, value: string | number | "") => {
     const copy = form.artprogram.slice();
-    copy[idx] = { ...copy[idx], [field]: value };
+    if (field === "fee_per_month") {
+      copy[idx] = { ...copy[idx], fee_per_month: value === "" ? "" : Number(value) };
+    } else {
+      copy[idx] = { ...copy[idx], [field]: String(value) } as ArtProgram;
+    }
     update("artprogram", copy);
   };
 
-  const addSport = () => update("sportsprogram", [...form.sportsprogram, { sport_name: "", level: "" }]);
+  const addSport = () => update("sportsprogram", [...form.sportsprogram, { sport_name: "", level: "",fee_per_month: "" }]);
   const removeSport = (idx: number) => update("sportsprogram", form.sportsprogram.filter((_, i) => i !== idx));
-  const setSport = (idx: number, field: keyof SportsProgram, value: string) => {
+  const setSport = (idx: number, field: keyof SportsProgram, value: string | number | "") => {
     const copy = form.sportsprogram.slice();
-    copy[idx] = { ...copy[idx], [field]: value };
+    if (field === "fee_per_month") {
+      copy[idx] = { ...copy[idx], fee_per_month: value === "" ? "" : Number(value) };
+    } else {
+      copy[idx] = { ...copy[idx], [field]: String(value) } as SportsProgram;
+    }
     update("sportsprogram", copy);
   };
 
@@ -88,8 +116,8 @@ export default function NewAcademyPage() {
     setError(null);
     setSuccess(null);
 
-    if (!form.name || !form.type || !form.address.line1 || !form.address.city || !form.phone) {
-      setError("Please fill all required fields: Name, Type, Address Line 1, City, Phone.");
+    if (!form.name || !form.type || !form.phone || !form.wabsite || !form.academy_startat || !form.address.line1 || !form.address.line2 || !form.address.city || !form.address.state || !form.address.Country || !form.address.zip || !form.address.link) {
+      setError("Please fill all required fields: Basic info, Website, Start date, Full address, and Map link.");
       return;
     }
     if (form.lat === "" || form.lng === "") {
@@ -106,12 +134,16 @@ export default function NewAcademyPage() {
         name: form.name,
         type: form.type,
         phone: form.phone,
+        wabsite: form.wabsite,
+        academy_startat: form.academy_startat ? new Date(form.academy_startat).toISOString() : undefined,
         address: {
           line1: form.address.line1,
-          line2: form.address.line2 || undefined,
+          line2: form.address.line2,
           city: form.address.city,
-          state: form.address.state || undefined,
-          zip: form.address.zip || undefined,
+          state: form.address.state,
+          country: form.address.Country,
+          zip: form.address.zip,
+          link: form.address.link,
         },
         trainers: form.trainers
           .filter((t) => t.name && t.experience !== "" && t.specialization)
@@ -124,8 +156,12 @@ export default function NewAcademyPage() {
           recognition: form.achievements.recognition || undefined,
         },
         average_rating: form.average_rating === "" ? undefined : Number(form.average_rating),
-        artprogram: form.type === "Art" ? form.artprogram.filter((p) => p.art_name && p.level) : [],
-        sportsprogram: form.type === "Sports" ? form.sportsprogram.filter((p) => p.sport_name && p.level) : [],
+        artprogram: form.type === "Art" ? form.artprogram
+          .filter((p) => p.art_name && p.level)
+          .map((p) => ({ art_name: p.art_name, level: p.level, fees_per_month: p.fee_per_month === "" ? 0 : Number(p.fee_per_month) })) : [],
+        sportsprogram: form.type === "Sports" ? form.sportsprogram
+          .filter((p) => p.sport_name && p.level)
+          .map((p) => ({ sport_name: p.sport_name, level: p.level, fees_per_month: p.fee_per_month === "" ? 0 : Number(p.fee_per_month) })) : [],
         location: {
           type: "Point",
           coordinates: [Number(form.lng), Number(form.lat)],
@@ -165,9 +201,26 @@ export default function NewAcademyPage() {
   return (
     <div className="min-h-screen bg-slate-50">
       <div className="container mx-auto max-w-4xl px-6 md:px-10 py-10">
-        <div className="mb-6">
-          <h1 className="text-3xl md:text-4xl font-semibold tracking-tight text-slate-900">Add New Academy</h1>
-          <p className="text-slate-500 mt-1">Provide details below and submit to create a new academy.</p>
+        <div className="mb-6 flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-3xl md:text-4xl font-semibold tracking-tight text-slate-900">Add New Academy</h1>
+            <p className="text-slate-500 mt-1">Provide details below and submit to create a new academy.</p>
+          </div>
+          <button
+            type="button"
+            onClick={async () => {
+              try {
+                await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+                // After logout, redirect to academy page
+                router.replace('/academy');
+              } catch (err) {
+                console.error('Logout failed:', err);
+              }
+            }}
+            className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-slate-700 hover:bg-slate-50 shadow-sm"
+          >
+            Log out
+          </button>
         </div>
 
         {error && (
@@ -178,303 +231,58 @@ export default function NewAcademyPage() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          <fieldset className="rounded-xl border border-slate-200 bg-white p-5 md:p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <label className="block">
-                <legend className="px-2 text-lg font-semibold text-slate-900 pb-4 ">Basic Info</legend>
+          <BasicInfo
+            values={{
+              name: form.name,
+              type: form.type,
+              phone: form.phone,
+              wabsite: form.wabsite,
+              academy_startat: form.academy_startat,
+              average_rating: form.average_rating,
+            }}
+            onChange={handleBasicInfoChange}
+          />
 
-                <span className="text-sm text-slate-700 ">Name *</span>
-                <input
-                  className="mt-1 w-full h-11 rounded-lg border border-slate-300 bg-white px-3 text-slate-800 placeholder:text-slate-400 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 outline-none"
-                  value={form.name}
-                  onChange={(e) => update("name", e.target.value)}
-                  required
-                />
-              </label>
-              <label className="block">
-                <span className="text-sm text-slate-700">Type *</span>
-                <select
-                  className="mt-1 w-full h-11 rounded-lg border border-slate-300 bg-white px-3 text-slate-800 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 outline-none"
-                  value={form.type}
-                  onChange={(e) => update("type", e.target.value as FormState["type"])}
-                  required
-                >
-                  <option value="">Select</option>
-                  <option value="Art">Art</option>
-                  <option value="Sports">Sports</option>
-                </select>
-              </label>
-              <label className="block">
-                <span className="text-sm text-slate-700">Phone *</span>
-                <input
-                  className="mt-1 w-full h-11 rounded-lg border border-slate-300 bg-white px-3 text-slate-800 placeholder:text-slate-400 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 outline-none"
-                  value={form.phone}
-                  onChange={(e) => update("phone", e.target.value)}
-                  required
-                />
-              </label>
-              <label className="block">
-                <span className="text-sm text-slate-700">Average Rating</span>
-                <input
-                  type="number"
-                  min={0}
-                  max={5}
-                  step={0.1}
-                  className="mt-1 w-full h-11 rounded-lg border border-slate-300 bg-white px-3 text-slate-800 placeholder:text-slate-400 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 outline-none"
-                  value={form.average_rating}
-                  onChange={(e) => update("average_rating", e.target.value === "" ? "" : Number(e.target.value))}
-                />
-              </label>
-            </div>
-          </fieldset>
+          <AddressSection address={form.address} onChange={updateAddress} />
 
-          <fieldset className="rounded-xl border border-slate-200 bg-white p-5 md:p-6">
-           
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <legend className="px-2 text-lg font-semibold text-slate-900 pb-2">Address *</legend>
-              <label className="block">
-                <span className="text-sm text-slate-700">Line 1 *</span>
-                <input
-                  className="mt-1 w-full h-11 rounded-lg border border-slate-300 bg-white px-3 text-slate-800 placeholder:text-slate-400 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 outline-none"
-                  value={form.address.line1}
-                  onChange={(e) => updateAddress("line1", e.target.value)}
-                  required
-                />
-              </label>
-              <label className="block">
-                <span className="text-sm text-slate-700">Line 2</span>
-                <input
-                  className="mt-1 w-full h-11 rounded-lg border border-slate-300 bg-white px-3 text-slate-800 placeholder:text-slate-400 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 outline-none"
-                  value={form.address.line2}
-                  onChange={(e) => updateAddress("line2", e.target.value)}
-                />
-              </label>
-              <label className="block">
-                <span className="text-sm text-slate-700">City *</span>
-                <input
-                  className="mt-1 w-full h-11 rounded-lg border border-slate-300 bg-white px-3 text-slate-800 placeholder:text-slate-400 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 outline-none"
-                  value={form.address.city}
-                  onChange={(e) => updateAddress("city", e.target.value)}
-                  required
-                />
-              </label>
-              <label className="block">
-                <span className="text-sm text-slate-700">State</span>
-                <input
-                  className="mt-1 w-full h-11 rounded-lg border border-slate-300 bg-white px-3 text-slate-800 placeholder:text-slate-400 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 outline-none"
-                  value={form.address.state}
-                  onChange={(e) => updateAddress("state", e.target.value)}
-                />
-              </label>
-              <label className="block md:col-span-2">
-                <span className="text-sm text-slate-700">Zip</span>
-                <input
-                  className="mt-1 w-full h-11 rounded-lg border border-slate-300 bg-white px-3 text-slate-800 placeholder:text-slate-400 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 outline-none"
-                  value={form.address.zip}
-                  onChange={(e) => updateAddress("zip", e.target.value)}
-                />
-              </label>
-            </div>
-          </fieldset>
+          <CoordinatesSection
+            lat={form.lat}
+            lng={form.lng}
+            onChange={(k: "lat" | "lng", v: number | "") => update(k, v)}
+          />
 
-          <fieldset className="rounded-xl border border-slate-200 bg-white p-5 md:p-6">
-            <legend className="px-2 text-lg font-semibold text-slate-900">Location (required)</legend>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <label className="block">
-                <span className="text-sm text-slate-700">Latitude *</span>
-                <input
-                  type="number"
-                  className="mt-1 w-full h-11 rounded-lg border border-slate-300 bg-white px-3 text-slate-800 placeholder:text-slate-400 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 outline-none"
-                  value={form.lat}
-                  onChange={(e) => update("lat", e.target.value === "" ? "" : Number(e.target.value))}
-                  required
-                />
-              </label>
-              <label className="block">
-                <span className="text-sm text-slate-700">Longitude *</span>
-                <input
-                  type="number"
-                  className="mt-1 w-full h-11 rounded-lg border border-slate-300 bg-white px-3 text-slate-800 placeholder:text-slate-400 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 outline-none"
-                  value={form.lng}
-                  onChange={(e) => update("lng", e.target.value === "" ? "" : Number(e.target.value))}
-                  required
-                />
-              </label>
-            </div>
-          </fieldset>
-
-          <fieldset className="rounded-xl border border-slate-200 bg-white p-5 md:p-6">
-
-            <div className="space-y-3">
-                          <legend className="px-2 text-lg font-semibold text-slate-900 pb-2">Trainers</legend>
-              {form.trainers.map((t, idx) => (
-                <div key={idx} className="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
-                  <label className="block">
-                    <span className="text-sm text-slate-700">Name</span>
-                    <input
-                      className="mt-1 w-full h-11 rounded-lg border border-slate-300 bg-white px-3 text-slate-800 placeholder:text-slate-400 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 outline-none"
-                      value={t.name}
-                      onChange={(e) => setTrainer(idx, "name", e.target.value)}
-                    />
-                  </label>
-                  <label className="block">
-                    <span className="text-sm text-slate-700">Experience (years)</span>
-                    <input
-                      type="number"
-                      min={0}
-                      className="mt-1 w-full h-11 rounded-lg border border-slate-300 bg-white px-3 text-slate-800 placeholder:text-slate-400 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 outline-none"
-                      value={t.experience}
-                      onChange={(e) => setTrainer(idx, "experience", e.target.value)}
-                    />
-                  </label>
-                  <label className="block">
-                    <span className="text-sm text-slate-700">Specialization</span>
-                    <input
-                      className="mt-1 w-full h-11 rounded-lg border border-slate-300 bg-white px-3 text-slate-800 placeholder:text-slate-400 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 outline-none"
-                      value={t.specialization}
-                      onChange={(e) => setTrainer(idx, "specialization", e.target.value)}
-                    />
-                  </label>
-                  <div className="flex md:justify-end">
-                    <button
-                      type="button"
-                      onClick={() => removeTrainer(idx)}
-                      className="h-11 inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-3 text-slate-700 hover:bg-slate-50 shadow-sm"
-                    >
-                      Remove
-                    </button>
-                  </div>
-                </div>
-              ))}
-              <button
-                type="button"
-                onClick={addTrainer}
-                className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-700 hover:bg-slate-50 shadow-sm"
-              >
-                + Add trainer
-              </button>
-            </div>
-          </fieldset>
+          <TrainersSection
+            trainers={form.trainers}
+            addTrainer={addTrainer}
+            removeTrainer={removeTrainer}
+            setTrainer={setTrainer}
+            isAdmin={false}
+          />
 
           {form.type === "Art" && (
-            <fieldset className="rounded-xl border border-slate-200 bg-white p-5 md:p-6">
-              <legend className="px-2 text-lg font-semibold text-slate-900">Art Programs</legend>
-              <div className="space-y-3">
-                {form.artprogram.map((p, idx) => (
-                  <div key={idx} className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
-                    <label className="block">
-                      <span className="text-sm text-slate-700">Art Name</span>
-                      <input
-                        className="mt-1 w-full h-11 rounded-lg border border-slate-300 bg-white px-3 text-slate-800 placeholder:text-slate-400 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 outline-none"
-                        value={p.art_name}
-                        onChange={(e) => setArt(idx, "art_name", e.target.value)}
-                      />
-                    </label>
-                    <label className="block">
-                      <span className="text-sm text-slate-700">Level</span>
-                      <input
-                        className="mt-1 w-full h-11 rounded-lg border border-slate-300 bg-white px-3 text-slate-800 placeholder:text-slate-400 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 outline-none"
-                        value={p.level}
-                        onChange={(e) => setArt(idx, "level", e.target.value)}
-                      />
-                    </label>
-                    <div className="flex md:justify-end">
-                      <button
-                        type="button"
-                        onClick={() => removeArt(idx)}
-                        className="h-11 inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-3 text-slate-700 hover:bg-slate-50 shadow-sm"
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  </div>
-                ))}
-                <button
-                  type="button"
-                  onClick={addArt}
-                  className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-700 hover:bg-slate-50 shadow-sm"
-                >
-                  + Add art program
-                </button>
-              </div>
-            </fieldset>
+            <ArtProgramsSection
+              programs={form.artprogram}
+              add={addArt}
+              remove={removeArt}
+              set={setArt}
+              isAdmin={false}
+            />
           )}
 
           {form.type === "Sports" && (
-            <fieldset className="rounded-xl border border-slate-200 bg-white p-5 md:p-6">
-              <legend className="px-2 text-lg font-semibold text-slate-900">Sports Programs</legend>
-              <div className="space-y-3">
-                {form.sportsprogram.map((p, idx) => (
-                  <div key={idx} className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
-                    <label className="block">
-                      <span className="text-sm text-slate-700">Sport Name</span>
-                      <input
-                        className="mt-1 w-full h-11 rounded-lg border border-slate-300 bg-white px-3 text-slate-800 placeholder:text-slate-400 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 outline-none"
-                        value={p.sport_name}
-                        onChange={(e) => setSport(idx, "sport_name", e.target.value)}
-                      />
-                    </label>
-                    <label className="block">
-                      <span className="text-sm text-slate-700">Level</span>
-                      <input
-                        className="mt-1 w-full h-11 rounded-lg border border-slate-300 bg-white px-3 text-slate-800 placeholder:text-slate-400 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 outline-none"
-                        value={p.level}
-                        onChange={(e) => setSport(idx, "level", e.target.value)}
-                      />
-                    </label>
-                    <div className="flex md:justify-end">
-                      <button
-                        type="button"
-                        onClick={() => removeSport(idx)}
-                        className="h-11 inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-3 text-slate-700 hover:bg-slate-50 shadow-sm"
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  </div>
-                ))}
-                <button
-                  type="button"
-                  onClick={addSport}
-                  className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-700 hover:bg-slate-50 shadow-sm"
-                >
-                  + Add sports program
-                </button>
-              </div>
-            </fieldset>
+            <SportsProgramsSection
+              programs={form.sportsprogram}
+              add={addSport}
+              remove={removeSport}
+              set={setSport}
+              isAdmin={false}
+            />
           )}
 
-          <fieldset className="rounded-xl border border-slate-200 bg-white p-5 md:p-6">
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <legend className="px-2 text-lg font-semibold text-slate-900 pb-2">Achievements</legend>
-              <label className="block">
-                <span className="text-sm text-slate-700">Award</span>
-                <input
-                  className="mt-1 w-full h-11 rounded-lg border border-slate-300 bg-white px-3 text-slate-800 placeholder:text-slate-400 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 outline-none"
-                  value={form.achievements.award}
-                  onChange={(e) => update("achievements", { ...form.achievements, award: e.target.value })}
-                />
-              </label>
-              <label className="block">
-                <span className="text-sm text-slate-700">Notable Alumni (comma separated)</span>
-                <input
-                  className="mt-1 w-full h-11 rounded-lg border border-slate-300 bg-white px-3 text-slate-800 placeholder:text-slate-400 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 outline-none"
-                  value={form.achievements.notable_alumni}
-                  onChange={(e) => update("achievements", { ...form.achievements, notable_alumni: e.target.value })}
-                />
-              </label>
-              <label className="block md:col-span-2">
-                <span className="text-sm text-slate-700">Recognition</span>
-                <textarea
-                  rows={3}
-                  className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-800 placeholder:text-slate-400 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 outline-none"
-                  value={form.achievements.recognition}
-                  onChange={(e) => update("achievements", { ...form.achievements, recognition: e.target.value })}
-                />
-              </label>
-            </div>
-          </fieldset>
+          <AchievementsSection
+            values={form.achievements}
+            onChange={(k, v) => update("achievements", { ...form.achievements, [k]: v })}
+          />
 
           <div className="flex items-center gap-3">
             <button
