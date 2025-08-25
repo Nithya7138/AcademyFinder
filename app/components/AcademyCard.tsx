@@ -22,7 +22,8 @@ interface Academy {
   address?: { city?: string; state?: string; country?: string | null; zip?: string | number };
   artprogram?: ArtProgram[];
   sportsprogram?: SportsProgram[];
-  rating?: number;
+  rating?: number; // legacy or alternate field
+  average_rating?: number; // matches schema
 }
 
 export default function AcademyCard({ academy }: { academy: Academy }) {
@@ -95,20 +96,17 @@ export default function AcademyCard({ academy }: { academy: Academy }) {
             State: <span className="text-slate-900">{academy.address?.state}</span>
           </p>
         )}
-        {academy.address && (
+        {academy.address?.country && (
           <span>
             <p>
               Country: <span className="text-slate-900">{academy.address.country ?? "null"}</span>
             </p>
-            <p>
-              Zip Code: <span className="text-slate-900">{academy.address.zip ?? "null"}</span>
-            </p>
-          </span>
+            </span>
         )}
 
-        {academy.rating && (
+        {typeof (academy.average_rating ?? academy.rating) === "number" && (
           <p className="font-semibold">
-            Rating: <span className="text-amber-600">{academy.rating} ⭐</span>
+            Rating: <span className="text-amber-600">{(academy.average_rating ?? academy.rating)} ⭐</span>
           </p>
         )}
       </div>
