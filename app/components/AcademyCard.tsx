@@ -173,23 +173,6 @@ export default function AcademyCard({ academy }: { academy: Academy }) {
           >
             View Details
           </Link>
-
-          {authed && (
-            <div className="flex gap-2">
-              <Link
-                href={`/academy/${detailId}/edit`}
-                className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-700 hover:bg-slate-50 hover:shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 transition"
-              >
-                Edit
-              </Link>
-              <button
-                onClick={handleDelete}
-                className="inline-flex items-center justify-center rounded-lg border border-red-300 bg-white px-4 py-2 text-red-700 hover:bg-red-50 hover:shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 transition"
-              >
-                Delete
-              </button>
-            </div>
-          )}
         </div>
       ) : null}
     </article>
