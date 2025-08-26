@@ -1,7 +1,6 @@
 "use client";
-// Purpose: Card component displaying brief academy info with actions (view/edit/delete)
+// Purpose: Card component displaying brief academy info with actions (view only)
 import Link from "next/link";
-import { useEffect, useState } from "react";
 
 interface ArtProgram {
   art_name: string;
@@ -22,46 +21,15 @@ interface Academy {
   address?: { city?: string; state?: string; country?: string | null; zip?: string | number };
   artprogram?: ArtProgram[];
   sportsprogram?: SportsProgram[];
-  rating?: number; // legacy or alternate field
-  average_rating?: number; // matches schema
+  rating?: number; 
+  average_rating?: number; 
 }
 
 export default function AcademyCard({ academy }: { academy: Academy }) {
   const detailId = academy.id ?? academy._id;
-  const [authed, setAuthed] = useState(false);
 
-  useEffect(() => {
-    const run = async () => {
-      try {
-        const r = await fetch("/api/auth/status", { cache: "no-store" });
-        const j = await r.json();
-        setAuthed(Boolean(j?.authed));
-      } catch {}
-    };
-    run();
-  }, []);
 
-  async function handleDelete() {
-    if (!detailId) return;
-    const ok = confirm("Delete this academy? This action cannot be undone.");
-    if (!ok) return;
 
-    try {
-      const res = await fetch(`/api/academy/${detailId}`, {
-        method: "DELETE",
-        credentials: "include",
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => null);
-        throw new Error(data?.error || "Delete failed");
-      }
-      alert("Deleted successfully");
-      window.location.reload();
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : String(err);
-      alert(message);
-    }
-  }
 
   return (
     <article
@@ -72,9 +40,8 @@ export default function AcademyCard({ academy }: { academy: Academy }) {
         bg-white p-6 shadow-sm transition
         hover:-translate-y-0.5 hover:shadow-md
         outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/40
-        flex flex-col
-      "
-    >
+        flex flex-col">
+
       <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
         {academy.name}
       </h2>
@@ -83,6 +50,7 @@ export default function AcademyCard({ academy }: { academy: Academy }) {
         <p className="font-medium">
           Type: <span className="text-slate-900">{academy.type}</span>
         </p>
+
         <p>
           Phone: <span className="text-slate-900">{academy.phone}</span>
         </p>
@@ -161,19 +129,25 @@ export default function AcademyCard({ academy }: { academy: Academy }) {
 
       {detailId ? (
         <div className="mt-auto pt-4 space-y-2">
-          <Link
-            href={`./academy/${detailId}`}
-            className="
-              inline-flex items-center justify-center gap-2 rounded-lg
-              bg-indigo-600 px-5 py-2 text-white font-medium shadow-sm
-              transition
-              hover:bg-indigo-700
-              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/40
-            "
-          >
-            View Details
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link
+              href={`./academy/${detailId}`}
+              className="
+                inline-flex items-center justify-center gap-2 rounded-lg
+                bg-indigo-600 px-5 py-2 text-white font-medium shadow-sm
+                transition
+                hover:bg-indigo-700
+                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/40
+              "
+            >
+              View Details
+            </Link>  
+           
+          </div>
         </div>
+
+
+
       ) : null}
     </article>
   );
