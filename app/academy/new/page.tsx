@@ -24,6 +24,7 @@ type FormState = {
   address: {
     line1: string;
     line2: string; 
+    area:string;
     city: string;
     state: string; 
     Country: string;
@@ -55,7 +56,7 @@ export default function NewAcademyPage() {
     phone: "",
     wabsite: "",
     academy_startat: "",
-    address: { line1: "", line2: "", city: "", state: "", Country: "", zip: "", link: "" },
+    address: { line1: "", line2: "",area:"",city: "", state: "", Country: "", zip: "", link: "" },
     average_rating: "",
     lat: "",
     lng: "",
@@ -139,6 +140,7 @@ export default function NewAcademyPage() {
         address: {
           line1: form.address.line1,
           line2: form.address.line2,
+          area: form.address.area,
           city: form.address.city,
           state: form.address.state,
           country: form.address.Country,

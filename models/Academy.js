@@ -5,6 +5,7 @@ import mongoose, { Schema } from "mongoose";
 const AddressSchema = new Schema({
   line1: { type: String, required: true },
   line2: { type: String, required: true },
+  Area: { type: String, required: true },
   city: { type: String, required: true },
   state: { type: String, required: true },
   country: { type: String, required: true },

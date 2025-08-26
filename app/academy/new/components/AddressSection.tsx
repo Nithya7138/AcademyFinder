@@ -1,7 +1,7 @@
 "use client";
 
 type Address = {
-  line1: string; line2: string; city: string; state: string; Country: string; zip: string; link: string;
+  line1: string; line2: string;area:string ;city: string; state: string; Country: string; zip: string; link: string;
 };
 
 type Props = {
@@ -29,6 +29,11 @@ export default function AddressSection({ address, onChange }: Props) {
                  value={address.line2} onChange={(e) => onChange("line2", e.target.value)} />
         </label>
 
+        <label className="block">
+          <span className="text-sm text-slate-700">area *</span>
+          <input className={inputClass}
+                 value={address.area} onChange={(e) => onChange("area", e.target.value)} required />
+        </label>
         <label className="block">
           <span className="text-sm text-slate-700">City *</span>
           <input className={inputClass}

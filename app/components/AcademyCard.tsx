@@ -18,11 +18,12 @@ interface Academy {
   name: string;
   type: string;
   phone: string;
-  address?: { city?: string; state?: string; country?: string | null; zip?: string | number };
+  address?: { area?: string; city?: string; state?: string; country?: string | null; zip?: string | number; link?: string };
+  location?: { coordinates?: [number, number] }; // [lng, lat]
   artprogram?: ArtProgram[];
   sportsprogram?: SportsProgram[];
-  rating?: number; 
-  average_rating?: number; 
+  rating?: number;
+  average_rating?: number;
 }
 
 export default function AcademyCard({ academy }: { academy: Academy }) {
@@ -54,6 +55,12 @@ export default function AcademyCard({ academy }: { academy: Academy }) {
         <p>
           Phone: <span className="text-slate-900">{academy.phone}</span>
         </p>
+        {academy.address?.area && (
+          <p>
+            Area: <span className="text-slate-900">{academy.address?.area}</span>
+          </p>
+        )}
+
         {academy.address?.city && (
           <p>
             City: <span className="text-slate-900">{academy.address?.city}</span>
@@ -70,6 +77,11 @@ export default function AcademyCard({ academy }: { academy: Academy }) {
               Country: <span className="text-slate-900">{academy.address.country ?? "null"}</span>
             </p>
             </span>
+        )}
+        {academy.address?.link && (
+          <p>
+            Location: <a href={academy.address.link} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:text-indigo-800 underline">Open Map</a>
+          </p>
         )}
 
         {typeof (academy.average_rating ?? academy.rating) === "number" && (

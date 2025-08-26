@@ -11,7 +11,7 @@ type FormState = {
   name: string;
   type: "Art" | "Sports" | "";
   phone: string;
-  address: { line1: string; line2?: string; city: string; state?: string; country?: string; zip?: string };
+  address: { line1: string; line2?: string; city: string; state?: string; country?: string; zip?: string; link?: string };
   average_rating: number | "";
   trainers: Trainer[];
   artprogram: ArtProgram[];
@@ -27,7 +27,7 @@ function isAcademyType(t: unknown): t is "Art" | "Sports" {
 
 // Payload types for PATCH /api/academy/[id]
 // Keep in sync with server route to avoid 'any'
-interface AddressPayload { line1: string; line2?: string; city: string; state?: string; country?: string; zip?: string }
+interface AddressPayload { line1: string; line2?: string; city: string; state?: string; country?: string; zip?: string; link?: string }
 interface GeoLocation { type: "Point"; coordinates: [number, number] }
 interface AcademyUpdatePayload {
   name: string;
@@ -66,6 +66,7 @@ export default function EditAcademyPage({ params }: { params: { id: string } }) 
             state: data.address?.state || "",
             country: data.address?.country || "",
             zip: data.address?.zip || "",
+            link: data.address?.link || "",
           },
           average_rating: typeof data.average_rating === "number" ? data.average_rating : "",
           trainers: Array.isArray(data.trainers) ? data.trainers : [],
@@ -109,6 +110,7 @@ export default function EditAcademyPage({ params }: { params: { id: string } }) 
           state: form.address.state || undefined,
           country: form.address.country || undefined,
           zip: form.address.zip || undefined,
+          link: form.address.link || undefined,
         },
         average_rating: form.average_rating === "" ? undefined : Number(form.average_rating),
         artprogram: form.type === "Art" ? form.artprogram : undefined,
@@ -188,6 +190,12 @@ export default function EditAcademyPage({ params }: { params: { id: string } }) 
                 <span className="text-sm text-slate-700">Line 2</span>
                 <input className="mt-1 w-full h-11 rounded-lg border border-slate-300 bg-white px-3 text-slate-800 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 outline-none" value={form.address.line2} onChange={(e) => updateAddress("line2", e.target.value)} />
               </label>
+
+            <label className="block">
+                <span className="text-sm text-slate-700">Area *</span>
+                <input className="mt-1 w-full h-11 rounded-lg border border-slate-300 bg-white px-3 text-slate-800 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 outline-none" value={form.address.city} onChange={(e) => updateAddress("city", e.target.value)} required />
+              </label>
+
               <label className="block">
                 <span className="text-sm text-slate-700">City *</span>
                 <input className="mt-1 w-full h-11 rounded-lg border border-slate-300 bg-white px-3 text-slate-800 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 outline-none" value={form.address.city} onChange={(e) => updateAddress("city", e.target.value)} required />
@@ -203,6 +211,17 @@ export default function EditAcademyPage({ params }: { params: { id: string } }) 
               <label className="block md:col-span-2">
                 <span className="text-sm text-slate-700">Zip</span>
                 <input className="mt-1 w-full h-11 rounded-lg border border-slate-300 bg-white px-3 text-slate-800 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 outline-none" value={form.address.zip} onChange={(e) => updateAddress("zip", e.target.value)} />
+              </label>
+
+              <label className="block md:col-span-2">
+                <span className="text-sm text-slate-700">Location Link</span>
+                <input
+                  type="url"
+                  placeholder="https://maps.google.com/?q=..."
+                  className="mt-1 w-full h-11 rounded-lg border border-slate-300 bg-white px-3 text-slate-800 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 outline-none"
+                  value={form.address.link ?? ""}
+                  onChange={(e) => updateAddress("link", e.target.value)}
+                />
               </label>
             </div>
           </fieldset>

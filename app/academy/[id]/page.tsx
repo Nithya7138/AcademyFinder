@@ -27,6 +27,7 @@ export default async function AcademyDetailPage({ params }: PageProps) {
   };
 
   type Address = {
+    area?: string;
     city?: string;
     state?: string;
     country?: string | null;
@@ -46,6 +47,7 @@ export default async function AcademyDetailPage({ params }: PageProps) {
     average_rating?: number;
     sportsprogram?: ProgramItem[];
     artprogram?: ProgramItem[];
+    location?: { coordinates?: [number, number] }; // [lng, lat]
   }
 
   const doc = (await Academidata.findOne({ $or: conditions }).lean()) as AcademyDoc | null;
@@ -98,7 +100,11 @@ export default async function AcademyDetailPage({ params }: PageProps) {
               <p>{new Date(doc.academy_startat).toLocaleDateString()}</p>
             </div>)}  
           
-
+           {doc.address?.area &&(
+            <div className="bg-gray-50 p-4 rounded-xl shadow-sm">
+              <p className="font-semibold text-gray-800">📍area</p>
+              <p>{doc.address.area}</p>
+            </div>)}   
 
             
           {doc.address?.city && (
@@ -125,13 +131,24 @@ export default async function AcademyDetailPage({ params }: PageProps) {
               <p>{doc.address.zip}</p>
             </div>
           )}
-          {doc.address?.link && (
+          {(doc.address?.link || (Array.isArray(doc.location?.coordinates) && doc.location?.coordinates?.length === 2)) && (
             <div className="bg-gray-50 p-4 rounded-xl shadow-sm">
               <p className="font-semibold text-gray-800">📍 Location</p>
               <p>
-                <a href={doc.address.link} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:text-indigo-800">
-                  Open Map
-                </a>
+                {doc.address?.link ? (
+                  <a href={doc.address.link} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:text-indigo-800">
+                    Open Map
+                  </a>
+                ) : (
+                  <a
+                    href={`https://www.google.com/maps?q=${encodeURIComponent(String(doc.location?.coordinates?.[1]))},${encodeURIComponent(String(doc.location?.coordinates?.[0]))}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-indigo-600 hover:text-indigo-800"
+                  >
+                    Open Map
+                  </a>
+                )}
               </p>
             </div>)}
 
