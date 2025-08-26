@@ -8,6 +8,7 @@ import RatingDropdown from "./components/ratingdropdown";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import type { Variants } from "framer-motion";
+import { X, RotateCw } from "lucide-react";
 
 
 interface Academy {
@@ -19,6 +20,7 @@ interface Academy {
   address?: { city?: string ,contry?:string,state?:string};
   artprogram?: { art_name: string; level: string;fees_per_month:number }[];
   sportsprogram?: { sport_name: string; level: string; fees_per_month:number }[];
+  location?: { coordinates?: [number, number] }; // [lng, lat]
 }
 
 // Subtle, professional animation presets
@@ -46,7 +48,15 @@ export default function AcademySearchPage() {
   const [minRating, setMinRating] = useState("0");
   const [nearby, setNearby] = useState<{ lat: number; lng: number } | null>(null);
   const [radiusKm, setRadiusKm] = useState(10);
-  const [sort, setSort] = useState<"relevance" | "distance" | "newest" | "started_newest" | "started_oldest">("relevance");
+  const [sort, setSort] = useState<
+    | "relevance"
+    | "distance"
+    | "newest"
+    | "started_newest"
+    | "started_oldest"
+    | "price_low_high"
+    | "price_high_low"
+  >("relevance");
   const [authed, setAuthed] = useState(false);
 
   // New search fields
@@ -111,7 +121,36 @@ export default function AcademySearchPage() {
         }
         const json = await res.json();
         // API returns { results, page, limit, total, totalPages }
-        setAcademies(json.results ?? []);
+        let results: Academy[] = json.results ?? [];
+
+        // Client-side distance sort fallback to ensure nearest-first display
+        if (sort === "distance" && nearby && Array.isArray(results)) {
+          const { lat, lng } = nearby;
+          const toRad = (v: number) => (v * Math.PI) / 180;
+          const haversineKm = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+            const R = 6371;
+            const dLat = toRad(lat2 - lat1);
+            const dLon = toRad(lon2 - lon1);
+            const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c;
+          };
+
+          const withDistances = results
+            .map((doc) => {
+              const coords = doc?.location?.coordinates;
+              if (!Array.isArray(coords) || coords.length !== 2) return { doc, dKm: Number.POSITIVE_INFINITY };
+              const dKm = haversineKm(lat, lng, coords[1], coords[0]);
+              return { doc, dKm };
+            })
+            .filter((p) => (radiusKm > 0 ? p.dKm <= radiusKm : true))
+            .sort((a, b) => a.dKm - b.dKm) // ascending distance
+            .map((p) => p.doc);
+
+          results = withDistances;
+        }
+
+        setAcademies(results);
         setTotalPages(json.totalPages ?? 1);
       } catch (err) {
         console.error(err);
@@ -151,6 +190,16 @@ export default function AcademySearchPage() {
         (pos) => {
           const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
           setNearby(coords);
+          setSort("distance"); // Ensure nearest first ordering
+          // Clear restrictive filters so nearest results aren't hidden and enforce default radius
+          setQuery("");
+          setTypeFilter("all");
+          setStateQuery("");
+          setCountryQuery("");
+          setIdQuery("");
+          setMinFee("");
+          setMaxFee("");
+          setRadiusKm(10);
         },
         (err) => {
           let message = "Unable to get your location";
@@ -164,6 +213,21 @@ export default function AcademySearchPage() {
     } catch {
       alert("Unexpected error getting location");
     }
+  }
+
+  function clearAllFilters() {
+    setQuery("");
+    setTypeFilter("all");
+    setMinRating("0");
+    setStateQuery("");
+    setCountryQuery("");
+    setIdQuery("");
+    setMinFee("");
+    setMaxFee("");
+    setNearby(null);
+    setRadiusKm(10);
+    setSort("relevance");
+    setPage(1);
   }
 
   const skeletons = Array.from({ length: 8 });
@@ -181,7 +245,7 @@ export default function AcademySearchPage() {
           className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between mb-8"
         >
           <motion.div variants={fadeItem} className="space-y-1">
-            <h1 className="text-3xl md:text-4xl font-semibold tracking-tight text-slate-900">Find Academies</h1>
+            <h1 className="text-3xl md:text-4xl font-semibold tracking-tight text-slate-900">Academy Finder</h1>
             <p className="text-slate-500 text-sm md:text-base">Search, filter and discover academies near you.</p>
           </motion.div>
 
@@ -208,95 +272,209 @@ export default function AcademySearchPage() {
             className="w-full rounded-xl border border-slate-200 bg-white/90 backdrop-blur-sm shadow-sm p-4 md:p-5 space-y-4"
           >
             <div className="grid grid-cols-1 gap-3">
-              <div className="relative">
-                <input
-                  type="text"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Search academy, city or program..."
-                  className="w-full h-12 rounded-lg border border-slate-300 bg-white px-4 pr-10 text-slate-800 placeholder:text-slate-400 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/40"
-                />
+              <div className="relative flex items-center gap-2">
+                <div className="relative flex-1">
+                  <input
+                    type="text"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder="Search academy, city or program..."
+                    className="w-full h-12 rounded-lg border border-slate-300 bg-white px-4 pr-10 text-slate-800 placeholder:text-slate-400 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/40"
+                  />
+                  {query && (
+                    <button
+                      onClick={() => setQuery("")}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 z-10 text-slate-500 hover:text-slate-700"
+                      title="Clear search"
+                      aria-label="Clear search"
+                    >
+                      <X size={18} />
+                    </button>
+                  )}
+                </div>
+                <button
+                  onClick={clearAllFilters}
+                  className="shrink-0 inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-3 h-12 text-slate-700 hover:bg-slate-50 hover:shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                  title="Clear all filters"
+                >
+                  Clear all
+                </button>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <input
-                  type="text"
-                  value={stateQuery}
-                  onChange={(e) => setStateQuery(e.target.value)}
-                  placeholder="State (contains)"
-                  className="w-full h-11 rounded-lg border border-slate-300 bg-white px-3 text-slate-800 placeholder:text-slate-400 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/40"
-                />
-                <input
-                  type="text"
-                  value={countryQuery}
-                  onChange={(e) => setCountryQuery(e.target.value)}
-                  placeholder="Country (contains)"
-                  className="w-full h-11 rounded-lg border border-slate-300 bg-white px-3 text-slate-800 placeholder:text-slate-400 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/40"
-                />
-                <input
-                  type="text"
-                  value={idQuery}
-                  onChange={(e) => setIdQuery(e.target.value)}
-                  placeholder="Academy ID (exact)"
-                  className="w-full h-11 rounded-lg border border-slate-300 bg-white px-3 text-slate-800 placeholder:text-slate-400 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/40"
-                />
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={stateQuery}
+                    onChange={(e) => setStateQuery(e.target.value)}
+                    placeholder="State (contains)"
+                    className="w-full h-11 rounded-lg border border-slate-300 bg-white px-3 pr-8 text-slate-800 placeholder:text-slate-400 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/40"
+                  />
+                  {stateQuery && (
+                    <button
+                      onClick={() => setStateQuery("")}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 z-10 text-slate-500 hover:text-slate-700"
+                      title="Clear state"
+                      aria-label="Clear state"
+                    >
+                      <X size={16} />
+                    </button>
+                  )}
+                </div>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={countryQuery}
+                    onChange={(e) => setCountryQuery(e.target.value)}
+                    placeholder="Country (contains)"
+                    className="w-full h-11 rounded-lg border border-slate-300 bg-white px-3 pr-8 text-slate-800 placeholder:text-slate-400 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/40"
+                  />
+                  {countryQuery && (
+                    <button
+                      onClick={() => setCountryQuery("")}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 z-10 text-slate-500 hover:text-slate-700"
+                      title="Clear country"
+                      aria-label="Clear country"
+                    >
+                      <X size={16} />
+                    </button>
+                  )}
+                </div>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={idQuery}
+                    onChange={(e) => setIdQuery(e.target.value)}
+                    placeholder="Academy ID (exact)"
+                    className="w-full h-11 rounded-lg border border-slate-300 bg-white px-3 pr-8 text-slate-800 placeholder:text-slate-400 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/40"
+                  />
+                  {idQuery && (
+                    <button
+                      onClick={() => setIdQuery("")}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 z-10 text-slate-500 hover:text-slate-700"
+                      title="Clear academy id"
+                      aria-label="Clear academy id"
+                    >
+                      <X size={16} />
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
 
             <div className="flex flex-row items-center gap-3 flex-nowrap overflow-x-auto whitespace-nowrap">
-              <div className="shrink-0">
+              <div className="shrink-0 inline-flex items-center gap-1">
                 <FilterDropdown filter={typeFilter} setFilter={setTypeFilter} />
+                {typeFilter !== "all" && (
+                  <button
+                    onClick={() => setTypeFilter("all")}
+                    className="inline-flex items-center justify-center rounded-md border border-slate-300 bg-white w-6 h-6 text-slate-600 hover:bg-slate-50"
+                    title="Clear type"
+                    aria-label="Clear type"
+                  >
+                    <X size={14} />
+                  </button>
+                )}
               </div>
-              <div className="shrink-0">
+              <div className="shrink-0 inline-flex items-center gap-1">
                 <RatingDropdown minRating={minRating} setMinRating={setMinRating} />
+                {minRating !== "0" && (
+                  <button
+                    onClick={() => setMinRating("0")}
+                    className="inline-flex items-center justify-center rounded-md border border-slate-300 bg-white w-6 h-6 text-slate-600 hover:bg-slate-50"
+                    title="Clear rating"
+                    aria-label="Clear rating"
+                  >
+                    <X size={14} />
+                  </button>
+                )}
               </div>
 
               <div className="flex flex-row items-center gap-2 flex-nowrap shrink-0">
 
-                <select
-                  value={minFee}
-                  onChange={(e) => setMinFee(e.target.value)}
-                  className="inline-flex h-12 rounded-lg border border-slate-300 bg-white px-3 text-slate-700 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/40 shrink-0"
-                  title="Min fee (per month)"
-                >
-                  <option value="">Min fee</option>
-                  <option value="500">₹500</option>
-                  <option value="1000">₹1,000</option>
-                  <option value="1500">₹1,500</option>
-                  <option value="2000">₹2,000</option>
-                  <option value="2500">₹2,500</option>
-                  <option value="3000">₹3,000</option>
-                  <option value="4000">₹4,000</option>
-                  <option value="5000">₹5,000</option>
-                </select>
-                <select
-                  value={maxFee}
-                  onChange={(e) => setMaxFee(e.target.value)}
-                  className="inline-flex h-12 rounded-lg border border-slate-300 bg-white px-3 text-slate-700 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/40 shrink-0"
-                  title="Max fee (per month)"
-                >
-                  <option value="">Max fee</option>
-                  <option value="500">₹500</option>
-                  <option value="1000">₹1,000</option>
-                  <option value="1500">₹1,500</option>
-                  <option value="2000">₹2,000</option>
-                  <option value="2500">₹2,500</option>
-                  <option value="3000">₹3,000</option>
-                  <option value="4000">₹4,000</option>
-                  <option value="5000">₹5,000</option>
-                </select>
+                <div className="inline-flex items-center gap-1">
+                  <select
+                    value={minFee}
+                    onChange={(e) => setMinFee(e.target.value)}
+                    className="inline-flex h-12 rounded-lg border border-slate-300 bg-white pl-3 pr-3 text-slate-700 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/40 shrink-0"
+                    title="Min fee (per month)"
+                  >
+                    <option value="">Min fee</option>
+                    <option value="500">₹500</option>
+                    <option value="1000">₹1,000</option>
+                    <option value="1500">₹1,500</option>
+                    <option value="2000">₹2,000</option>
+                    <option value="2500">₹2,500</option>
+                    <option value="3000">₹3,000</option>
+                    <option value="4000">₹4,000</option>
+                    <option value="5000">₹5,000</option>
+                  </select>
+                  {minFee && (
+                    <button
+                      onClick={() => setMinFee("")}
+                      className="inline-flex items-center justify-center rounded-md border border-slate-300 bg-white w-6 h-6 text-slate-600 hover:bg-slate-50"
+                      title="Clear min fee"
+                      aria-label="Clear min fee"
+                    >
+                      <X size={14} />
+                    </button>
+                  )}
+                </div>
 
-                <select
-                  value={sort}
-                  onChange={(e) => setSort(e.target.value as typeof sort)}
-                  className="inline-flex h-12 rounded-lg border border-slate-300 bg-white px-3 text-slate-700 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/40 shrink-0"
-                  title="Sort by"
-                >
-                  <option value="relevance">Relevance</option>
-                  <option value="distance">Distance (Nearest first)</option>
-                  <option value="newest">Newly Added (Most recent)</option>
-                  <option value="started_newest">Newly Started (Recent start date)</option>
-                  <option value="started_oldest">Early Started (Oldest start date)</option>
-                </select>
+                <div className="inline-flex items-center gap-1">
+                  <select
+                    value={maxFee}
+                    onChange={(e) => setMaxFee(e.target.value)}
+                    className="inline-flex h-12 rounded-lg border border-slate-300 bg-white pl-3 pr-3 text-slate-700 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/40 shrink-0"
+                    title="Max fee (per month)"
+                  >
+                    <option value="">Max fee</option>
+                    <option value="500">₹500</option>
+                    <option value="1000">₹1,000</option>
+                    <option value="1500">₹1,500</option>
+                    <option value="2000">₹2,000</option>
+                    <option value="2500">₹2,500</option>
+                    <option value="3000">₹3,000</option>
+                    <option value="4000">₹4,000</option>
+                    <option value="5000">₹5,000</option>
+                  </select>
+                  {maxFee && (
+                    <button
+                      onClick={() => setMaxFee("")}
+                      className="inline-flex items-center justify-center rounded-md border border-slate-300 bg-white w-6 h-6 text-slate-600 hover:bg-slate-50"
+                      title="Clear max fee"
+                      aria-label="Clear max fee"
+                    >
+                      <X size={14} />
+                    </button>
+                  )}
+                </div>
+
+                <div className="inline-flex items-center gap-1">
+                  <select
+                    value={sort}
+                    onChange={(e) => setSort(e.target.value as typeof sort)}
+                    className="inline-flex h-12 rounded-lg border border-slate-300 bg-white px-3 text-slate-700 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/40 shrink-0"
+                    title="Sort by"
+                  >
+                    <option value="relevance">Relevance</option>
+                    <option value="distance">Distance (Nearest first)</option>
+                    <option value="newest">Newly Added (Most recent)</option>
+                    <option value="started_newest">Newly Started (Recent start date)</option>
+                    <option value="started_oldest">Early Started (Oldest start date)</option>
+                    <option value="price_low_high">Price: Low to High</option>
+                    <option value="price_high_low">Price: High to Low</option>
+                  </select>
+                  {sort !== "relevance" && (
+                    <button
+                      onClick={() => setSort("relevance")}
+                      className="inline-flex items-center justify-center rounded-md border border-slate-300 bg-white w-6 h-6 text-slate-600 hover:bg-slate-50"
+                      title="Clear sort"
+                      aria-label="Clear sort"
+                    >
+                      <X size={14} />
+                    </button>
+                  )}
+                </div>
 
                 <button
                   onClick={handleNearMeClick}
@@ -304,24 +482,39 @@ export default function AcademySearchPage() {
                 >
                   {nearby ? "By my location" : "Near me"}
                 </button>
-                <input
-                  type="number"
-                  min={1}
-                  max={200}
-                  value={radiusKm}
-                  onChange={(e) => setRadiusKm(Number(e.target.value))}
-                  className="w-28 h-12 rounded-lg border border-slate-300 bg-white px-3 text-slate-700 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/40 shrink-0"
-                  title="Radius (km)"
-                  placeholder="km"
-                />
+
+                <div className="relative inline-block">
+                  <input
+                    type="number"
+                    min={1}
+                    max={200}
+                    value={radiusKm}
+                    onChange={(e) => setRadiusKm(Number(e.target.value))}
+                    className="w-28 h-12 rounded-lg border border-slate-300 bg-white pl-3 pr-8 text-slate-700 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/40 shrink-0"
+                    title="Radius (km)"
+                    placeholder="km"
+                  />
+                  {nearby && (
+                    <button
+                      onClick={() => setRadiusKm(10)}
+                      className="absolute right-1 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700"
+                      title="Reset radius to 10km"
+                      aria-label="Reset radius"
+                    >
+                      <RotateCw size={16} />
+                    </button>
+                  )}
+                </div>
+
                 <button
                   onClick={() => {
                     setNearby(null);
                     try { localStorage.removeItem("nearbyLocation"); } catch {}
                   }}
                   className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-3 h-12 text-slate-700 hover:bg-slate-50 hover:shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 transition shrink-0"
+                  title="Clear location"
                 >
-                  Clear
+                  Clear location
                 </button>
               </div>
             </div>

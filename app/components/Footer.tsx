@@ -8,8 +8,7 @@ export default function Footer() {
         <nav className="flex gap-4">
           <Link href="/" className="hover:text-indigo-600">Home</Link>
           <Link href="/academy" className="hover:text-indigo-600">Academies</Link>
-          <Link href="/enquiry" className="hover:text-indigo-600">Enquiry</Link>
-          <a href="/api/health" className="hover:text-indigo-600">API Status</a>
+          <Link href="/about" className="hover:text-indigo-600">About Us</Link>
         </nav>
       </div>
     </footer>

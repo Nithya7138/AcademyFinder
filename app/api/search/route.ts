@@ -144,17 +144,17 @@ export async function GET(req: Request) {
     let mongoQuery: SearchQuery = query;
     const lat = Number(latRaw);
     const lng = Number(lngRaw);
-    const hasGeo = Number.isFinite(lat) && Number.isFinite(lng) && radiusKm > 0;
-    if (hasGeo) {
-      const radiusMeters = radiusKm * 1000;
+    const hasGeo = Number.isFinite(lat) && Number.isFinite(lng);
+    if (hasGeo && sort !== "distance") {
+      const effectiveRadiusKm = radiusKm > 0 ? radiusKm : 10; //! default 10km
+      type NearCondition = NonNullable<SearchQuery["location"]>["$near"];
+      const nearCond: NearCondition = {
+        $geometry: { type: "Point", coordinates: [lng, lat] },
+        $maxDistance: effectiveRadiusKm * 1000,
+      };
       mongoQuery = {
         ...query,
-        location: {
-          $near: {
-            $geometry: { type: "Point", coordinates: [lng, lat] },
-            $maxDistance: radiusMeters,
-          },
-        },
+        location: { $near: nearCond },
       };
     }
 
@@ -167,6 +167,98 @@ export async function GET(req: Request) {
       if (sort === "newest") sortSpec = { created_at: -1 };
       if (sort === "started_newest") sortSpec = { academy_startat: -1 };
       if (sort === "started_oldest") sortSpec = { academy_startat: 1 };
+
+      // Explicit distance sort (nearest first) when geo present
+      if (sort === "distance" && hasGeo) {
+        // Fetch without $near to include all (other filters still apply)
+        type GeoDoc = { location?: { coordinates?: [number, number] } };
+        type BaseDoc = GeoDoc & { created_at?: string | Date; academy_startat?: string | Date };
+        const nonGeo = (await Academidata.find(query).lean()) as BaseDoc[];
+        let pairs = nonGeo
+          .map((doc): { doc: BaseDoc; dKm: number } | null => {
+            const coords = doc?.location?.coordinates;
+            if (!Array.isArray(coords) || coords.length !== 2) return null;
+            const dKm = haversineKm(lat, lng, coords[1], coords[0]);
+            return { doc, dKm };
+          })
+          .filter((p): p is { doc: BaseDoc; dKm: number } => p !== null);
+
+        // Sort ascending by distance (nearest first)
+        pairs = pairs.sort((a, b) => a.dKm - b.dKm);
+        // If a radius is provided (> 0), filter out items beyond it
+        const limitedPairs = radiusKm > 0 ? pairs.filter((p) => p.dKm <= radiusKm) : pairs;
+
+        const within = limitedPairs.map((p) => p.doc);
+        const total = within.length;
+        const totalPages = Math.max(1, Math.ceil(total / limit));
+        const results = within.slice(skip, skip + limit);
+        return NextResponse.json(
+          { results, page, limit, total, totalPages },
+          { status: 200 }
+        );
+      }
+
+      // Fee-based sort mode from explicit sort or derived from min/max fee filters
+      const feeSort: "min_asc" | "max_desc" | null =
+        sort === "price_low_high"
+          ? "min_asc"
+          : sort === "price_high_low"
+          ? "max_desc"
+          : hasMaxFee && !hasMinFee
+          ? "max_desc"
+          : hasMinFee && !hasMaxFee
+          ? "min_asc"
+          : null;
+
+      // Helper to extract numeric fees from both program arrays
+      type ProgramWithFee = { fees_per_month?: number | string | null | undefined };
+      type FeesDoc = {
+        artprogram?: ProgramWithFee[];
+        sportsprogram?: ProgramWithFee[];
+      };
+      const extractFees = (doc: FeesDoc): number[] => {
+        const fees: number[] = [];
+        const pushIfNum = (v: unknown) => {
+          const n = typeof v === "string" ? Number(v) : typeof v === "number" ? v : NaN;
+          if (Number.isFinite(n)) fees.push(n as number);
+        };
+        if (Array.isArray(doc?.artprogram)) {
+          for (const p of doc.artprogram) pushIfNum(p?.fees_per_month);
+        }
+        if (Array.isArray(doc?.sportsprogram)) {
+          for (const p of doc.sportsprogram) pushIfNum(p?.fees_per_month);
+        }
+        return fees;
+      };
+
+      if (feeSort) {
+        // Fetch all, sort in-memory by fee, then paginate
+        const all = (await Academidata.find(mongoQuery, { artprogram: 1, sportsprogram: 1 }).lean()) as unknown as FeesDoc[];
+        const sorted = all.sort((a: FeesDoc, b: FeesDoc) => {
+          const feesA = extractFees(a);
+          const feesB = extractFees(b);
+          const minA = feesA.length ? Math.min(...feesA) : Infinity;
+          const maxA = feesA.length ? Math.max(...feesA) : -Infinity;
+          const minB = feesB.length ? Math.min(...feesB) : Infinity;
+          const maxB = feesB.length ? Math.max(...feesB) : -Infinity;
+          if (feeSort === "min_asc") {
+            // Lowest fee first; if tie, lower max next
+            if (minA !== minB) return minA - minB;
+            return maxA - maxB;
+          } else {
+            // feeSort === "max_desc" => Highest fee first; if tie, higher min next
+            if (maxA !== maxB) return maxB - maxA;
+            return minB - minA;
+          }
+        });
+        const total = sorted.length;
+        const totalPages = Math.max(1, Math.ceil(total / limit));
+        const results = sorted.slice(skip, skip + limit);
+        return NextResponse.json(
+          { results, page, limit, total, totalPages },
+          { status: 200 }
+        );
+      }
 
       const [results, total] = await Promise.all([
         (sortSpec
@@ -203,8 +295,12 @@ export async function GET(req: Request) {
               const dKm = haversineKm(lat, lng, coords[1], coords[0]);
               return { doc, dKm };
             })
-            .filter((p): p is { doc: BaseDoc; dKm: number } => p !== null)
-            .filter((p) => p.dKm <= radiusKm);
+            .filter((p): p is { doc: BaseDoc; dKm: number } => p !== null);
+
+          // Only enforce radius cut-off if not explicitly sorting by distance
+          if (sort !== "distance" && radiusKm > 0) {
+            pairs = pairs.filter((p) => p.dKm <= radiusKm);
+          }
 
           if (sort === "distance") pairs = pairs.sort((a, b) => a.dKm - b.dKm);
           if (sort === "newest")

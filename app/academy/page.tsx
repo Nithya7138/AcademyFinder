@@ -8,6 +8,7 @@ import RatingDropdown from "../components/ratingdropdown";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import type { Variants } from "framer-motion";
+import { X } from "lucide-react";
 
 
 interface Academy {
@@ -45,7 +46,7 @@ export default function AcademySearchPage() {
   const [typeFilter, setTypeFilter] = useState("all");
   const [minRating, setMinRating] = useState("0");
   const [nearby, setNearby] = useState<{ lat: number; lng: number } | null>(null);
-  const [radiusKm, setRadiusKm] = useState(10);
+  const radiusKm = 10;
   const [authed, setAuthed] = useState(false);
 
   // Fee and sort controls
@@ -121,7 +122,7 @@ export default function AcademySearchPage() {
     setPage(1);
   }, [query, typeFilter, minRating, nearby, radiusKm, sort, minFee, maxFee]);
 
-  // Always fetch live location on click (no caching)
+
   async function handleNearMeClick() {
     if (!("geolocation" in navigator)) {
       alert("Geolocation is not supported by your browser");
@@ -160,6 +161,17 @@ export default function AcademySearchPage() {
   }
 
   const skeletons = Array.from({ length: 8 });
+
+  function clearAllFilters() {
+    setQuery("");
+    setTypeFilter("all");
+    setMinRating("0");
+    setMinFee("");
+    setMaxFee("");
+    setSort("relevance");
+    setNearby(null);
+    try { localStorage.removeItem("nearbyLocation"); } catch {}
+  }
 
   return (
     <div className="min-h-screen animated-bg">
@@ -209,88 +221,145 @@ export default function AcademySearchPage() {
                   placeholder="Search academy, city or program..."
                   className="w-full h-12 rounded-lg border border-slate-300 bg-white px-4 pr-10 text-slate-800 placeholder:text-slate-400 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/40"
                 />
+                {query && (
+                  <button
+                    onClick={() => setQuery("")}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 z-10 text-slate-500 hover:text-slate-700"
+                    title="Clear search"
+                    aria-label="Clear search"
+                  >
+                    <X size={18} />
+                  </button>
+                )}
               </div>
+
             </div>
 
             <div className="flex flex-row items-center gap-3 flex-nowrap overflow-x-auto whitespace-nowrap">
-              <div className="shrink-0">
+              <div className="shrink-0 inline-flex items-center gap-1">
                 <FilterDropdown filter={typeFilter} setFilter={setTypeFilter} />
+                {typeFilter !== "all" && (
+                  <button
+                    onClick={() => setTypeFilter("all")}
+                    className="inline-flex items-center justify-center rounded-md border border-slate-300 bg-white w-6 h-6 text-slate-600 hover:bg-slate-50"
+                    title="Clear type"
+                    aria-label="Clear type"
+                  >
+                    <X size={14} />
+                  </button>
+                )}
               </div>
-              <div className="shrink-0">
+              <div className="shrink-0 inline-flex items-center gap-1">
                 <RatingDropdown minRating={minRating} setMinRating={setMinRating} />
+                {minRating !== "0" && (
+                  <button
+                    onClick={() => setMinRating("0")}
+                    className="inline-flex items-center justify-center rounded-md border border-slate-300 bg-white w-6 h-6 text-slate-600 hover:bg-slate-50"
+                    title="Clear rating"
+                    aria-label="Clear rating"
+                  >
+                    <X size={14} />
+                  </button>
+                )}
               </div>
               <div className="flex flex-row items-center gap-2 flex-nowrap shrink-0">
 
-                <select
-                  value={minFee}
-                  onChange={(e) => setMinFee(e.target.value)}
-                  className="inline-flex h-12 rounded-lg border border-slate-300 bg-white px-3 text-slate-700 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/40 shrink-0"
-                  title="Min fee (per month)"
-                >
-                  <option value="">Min fee</option>
-                  <option value="500">₹500</option>
-                  <option value="1000">₹1,000</option>
-                  <option value="1500">₹1,500</option>
-                  <option value="2000">₹2,000</option>
-                  <option value="2500">₹2,500</option>
-                  <option value="3000">₹3,000</option>
-                  <option value="4000">₹4,000</option>
-                  <option value="5000">₹5,000</option>
-                </select>
-                <select
-                  value={maxFee}
-                  onChange={(e) => setMaxFee(e.target.value)}
-                  className="inline-flex h-12 rounded-lg border border-slate-300 bg-white px-3 text-slate-700 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/40 shrink-0"
-                  title="Max fee (per month)"
-                >
-                  <option value="">Max fee</option>
-                  <option value="500">₹500</option>
-                  <option value="1000">₹1,000</option>
-                  <option value="1500">₹1,500</option>
-                  <option value="2000">₹2,000</option>
-                  <option value="2500">₹2,500</option>
-                  <option value="3000">₹3,000</option>
-                  <option value="4000">₹4,000</option>
-                  <option value="5000">₹5,000</option>
-                </select>
+                <div className="inline-flex items-center gap-1">
+                  <select
+                    value={minFee}
+                    onChange={(e) => setMinFee(e.target.value)}
+                    className="inline-flex h-12 rounded-lg border border-slate-300 bg-white pl-3 pr-3 text-slate-700 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/40 shrink-0"
+                    title="Min fee (per month)"
+                  >
+                    <option value="">Min fee</option>
+                    <option value="500">₹500</option>
+                    <option value="1000">₹1,000</option>
+                    <option value="1500">₹1,500</option>
+                    <option value="2000">₹2,000</option>
+                    <option value="2500">₹2,500</option>
+                    <option value="3000">₹3,000</option>
+                    <option value="4000">₹4,000</option>
+                    <option value="5000">₹5,000</option>
+                  </select>
+                  {minFee && (
+                    <button
+                      onClick={() => setMinFee("")}
+                      className="inline-flex items-center justify-center rounded-md border border-slate-300 bg-white w-6 h-6 text-slate-600 hover:bg-slate-50"
+                      title="Clear min fee"
+                      aria-label="Clear min fee"
+                    >
+                      <X size={14} />
+                    </button>
+                  )}
+                </div>
+                <div className="inline-flex items-center gap-1">
+                  <select
+                    value={maxFee}
+                    onChange={(e) => setMaxFee(e.target.value)}
+                    className="inline-flex h-12 rounded-lg border border-slate-300 bg-white pl-3 pr-3 text-slate-700 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/40 shrink-0"
+                    title="Max fee (per month)"
+                  >
+                    <option value="">Max fee</option>
+                    <option value="500">₹500</option>
+                    <option value="1000">₹1,000</option>
+                    <option value="1500">₹1,500</option>
+                    <option value="2000">₹2,000</option>
+                    <option value="2500">₹2,500</option>
+                    <option value="3000">₹3,000</option>
+                    <option value="4000">₹4,000</option>
+                    <option value="5000">₹5,000</option>
+                  </select>
+                  {maxFee && (
+                    <button
+                      onClick={() => setMaxFee("")}
+                      className="inline-flex items-center justify-center rounded-md border border-slate-300 bg-white w-6 h-6 text-slate-600 hover:bg-slate-50"
+                      title="Clear max fee"
+                      aria-label="Clear max fee"
+                    >
+                      <X size={14} />
+                    </button>
+                  )}
+                </div>
 
-                <select
-                  value={sort}
-                  onChange={(e) => setSort(e.target.value as typeof sort)}
-                  className="inline-flex h-12 rounded-lg border border-slate-300 bg-white px-3 text-slate-700 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/40 shrink-0"
-                  title="Sort by"
-                >
-                  <option value="relevance">Relevance</option>
-                  <option value="newest">Newly Added (Most recent)</option>
-                  <option value="started_newest">Newly Started (Recent start date)</option>
-                  <option value="started_oldest">Early Started (Oldest start date)</option>
-                </select>
+                <div className="inline-flex items-center gap-1">
+                  <select
+                    value={sort}
+                    onChange={(e) => setSort(e.target.value as typeof sort)}
+                    className="inline-flex h-12 rounded-lg border border-slate-300 bg-white px-3 text-slate-700 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/40 shrink-0"
+                    title="Sort by"
+                  >
+                    <option value="relevance">Relevance</option>
+                    <option value="newest">Newly Added (Most recent)</option>
+                    <option value="started_newest">Newly Started (Recent start date)</option>
+                    <option value="started_oldest">Early Started (Oldest start date)</option>
+                  </select>
+                  {sort !== "relevance" && (
+                    <button
+                      onClick={() => setSort("relevance")}
+                      className="inline-flex items-center justify-center rounded-md border border-slate-300 bg-white w-6 h-6 text-slate-600 hover:bg-slate-50"
+                      title="Clear sort"
+                      aria-label="Clear sort"
+                    >
+                      <X size={14} />
+                    </button>
+                  )}
+                </div>
 
-                <button
-                  onClick={handleNearMeClick}
-                  className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 h-12 text-slate-700 hover:bg-slate-50 hover:shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 transition shrink-0"
-                >
-                  {nearby ? "By my location" : "Near me"}
-                </button>
-                <input
-                  type="number"
-                  min={1}
-                  max={200}
-                  value={radiusKm}
-                  onChange={(e) => setRadiusKm(Number(e.target.value))}
-                  className="w-28 h-12 rounded-lg border border-slate-300 bg-white px-3 text-slate-700 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/40 shrink-0"
-                  title="Radius (km)"
-                  placeholder="km"
-                />
-                <button
-                  onClick={() => {
-                    setNearby(null);
-                    try { localStorage.removeItem("nearbyLocation"); } catch {}
-                  }}
-                  className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-3 h-12 text-slate-700 hover:bg-slate-50 hover:shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 transition shrink-0"
-                >
-                  Clear
-                </button>
+                <div className="inline-flex items-center gap-2">
+                  <button
+                    onClick={handleNearMeClick}
+                    className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 h-12 text-slate-700 hover:bg-slate-50 hover:shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 transition shrink-0"
+                  >
+                    {nearby ? "By my location" : "Near me"}
+                  </button>
+                  <button
+                    onClick={clearAllFilters}
+                    className="shrink-0 inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-3 h-12 text-slate-700 hover:bg-slate-50 hover:shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                    title="Clear all filters"
+                  >
+                    Clear all
+                  </button>
+                </div>
               </div>
             </div>
           </motion.div>

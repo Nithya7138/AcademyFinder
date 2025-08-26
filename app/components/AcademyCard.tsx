@@ -141,8 +141,24 @@ export default function AcademyCard({ academy }: { academy: Academy }) {
               "
             >
               View Details
-            </Link>  
-           
+            </Link>
+            <Link
+              href={{
+                pathname: "/enquiry",
+                query: {
+                  academyId: String(detailId ?? ""),
+                  academyName: academy.name ?? "",
+                },
+              }}
+              className="
+                inline-flex items-center justify-center gap-2 rounded-lg
+                border border-slate-300 bg-white px-5 py-2 text-slate-900 font-medium shadow-sm
+                transition hover:bg-slate-50
+                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/40
+              "
+            >
+              Enquiry
+            </Link>
           </div>
         </div>
 

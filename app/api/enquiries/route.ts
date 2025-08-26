@@ -7,15 +7,47 @@ export async function POST(req: Request) {
     await dbConnect();
     const body = await req.json();
 
-    const { name, email, phone, interest, batch_time } = body || {};
-    if (!name || !email || !phone || !interest || !batch_time) {
+    const {
+      name,
+      email,
+      phone,
+      interest,
+      batch_time,
+      academyId,
+      academyName,
+      type,
+      programName,
+      message,
+    } = body || {};
+
+    if (
+      !name ||
+      !email ||
+      !phone ||
+      !batch_time ||
+      !academyId ||
+      !academyName ||
+      !type ||
+      !programName
+    ) {
       return NextResponse.json({ error: "All fields are required" }, { status: 400 });
     }
 
-    const created = await Enquiry.create({ name, email, phone, interest, batch_time });
+    const created = await Enquiry.create({
+      name,
+      email,
+      phone,
+      // interest is optional now
+      interest,
+      batch_time,
+      academyId,
+      academyName,
+      type,
+      programName,
+      message,
+    });
     return NextResponse.json(created, { status: 201 });
   } catch (error: unknown) {
-    // Safely derive an error message without using 'any'
     const message =
       error instanceof Error
         ? error.message
