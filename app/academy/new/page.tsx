@@ -10,6 +10,7 @@ import ArtProgramsSection from "./components/ArtProgramsSection";
 import SportsProgramsSection from "./components/SportsProgramsSection";
 import AchievementsSection from "./components/AchievementsSection";
 import CoordinatesSection from "./components/CoordinatesSection";
+import { motion } from "framer-motion";
 
 type Trainer = { name: string; experience: number | ""; specialization: string };
 type ArtProgram = { art_name: string; level: string ; fee_per_month: number | "" };
@@ -202,8 +203,13 @@ export default function NewAcademyPage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <div className="container mx-auto max-w-4xl px-6 md:px-10 py-10">
-        <div className="mb-6 flex items-start justify-between gap-4">
+      <div className="container mx-auto max-w-5xl px-4 md:px-10 py-10">
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, ease: "easeOut" }}
+          className="mb-6 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4"
+        >
           <div>
             <h1 className="text-3xl md:text-4xl font-semibold tracking-tight text-slate-900">Add New Academy</h1>
             <p className="text-slate-500 mt-1">Provide details below and submit to create a new academy.</p>
@@ -213,95 +219,112 @@ export default function NewAcademyPage() {
             onClick={async () => {
               try {
                 await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
-                // After logout, redirect to academy page
                 router.replace('/academy');
               } catch (err) {
                 console.error('Logout failed:', err);
               }
             }}
-            className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-slate-700 hover:bg-slate-50 shadow-sm"
+            className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-slate-700 hover:bg-slate-50 shadow-sm transition-transform duration-200 hover:-translate-y-0.5"
           >
             Log out
           </button>
-        </div>
+        </motion.div>
 
         {error && (
-          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-red-700 text-sm">{error}</div>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-red-700 text-sm">{error}</motion.div>
         )}
         {success && (
-          <div className="mb-4 rounded-lg border border-green-200 bg-green-50 p-3 text-green-700 text-sm">{success}</div>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-4 rounded-lg border border-green-200 bg-green-50 p-3 text-green-700 text-sm">{success}</motion.div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          <BasicInfo
-            values={{
-              name: form.name,
-              type: form.type,
-              phone: form.phone,
-              wabsite: form.wabsite,
-              academy_startat: form.academy_startat,
-              average_rating: form.average_rating,
-            }}
-            onChange={handleBasicInfoChange}
-          />
+          <motion.div initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.3 }}>
+            <BasicInfo
+              values={{
+                name: form.name,
+                type: form.type,
+                phone: form.phone,
+                wabsite: form.wabsite,
+                academy_startat: form.academy_startat,
+                average_rating: form.average_rating,
+              }}
+              onChange={handleBasicInfoChange}
+            />
+          </motion.div>
 
-          <AddressSection address={form.address} onChange={updateAddress} />
+          <motion.div initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.3, delay: 0.05 }}>
+            <AddressSection address={form.address} onChange={updateAddress} />
+          </motion.div>
 
-          <CoordinatesSection
-            lat={form.lat}
-            lng={form.lng}
-            onChange={(k: "lat" | "lng", v: number | "") => update(k, v)}
-          />
+          <motion.div initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.3, delay: 0.1 }}>
+            <CoordinatesSection
+              lat={form.lat}
+              lng={form.lng}
+              onChange={(k: "lat" | "lng", v: number | "") => update(k, v)}
+            />
+          </motion.div>
 
-          <TrainersSection
-            trainers={form.trainers}
-            addTrainer={addTrainer}
-            removeTrainer={removeTrainer}
-            setTrainer={setTrainer}
-            isAdmin={false}
-          />
-
-          {form.type === "Art" && (
-            <ArtProgramsSection
-              programs={form.artprogram}
-              add={addArt}
-              remove={removeArt}
-              set={setArt}
+          <motion.div initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.3, delay: 0.15 }}>
+            <TrainersSection
+              trainers={form.trainers}
+              addTrainer={addTrainer}
+              removeTrainer={removeTrainer}
+              setTrainer={setTrainer}
               isAdmin={false}
             />
+          </motion.div>
+
+          {form.type === "Art" && (
+            <motion.div initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.3, delay: 0.2 }}>
+              <ArtProgramsSection
+                programs={form.artprogram}
+                add={addArt}
+                remove={removeArt}
+                set={setArt}
+                isAdmin={false}
+              />
+            </motion.div>
           )}
 
           {form.type === "Sports" && (
-            <SportsProgramsSection
-              programs={form.sportsprogram}
-              add={addSport}
-              remove={removeSport}
-              set={setSport}
-              isAdmin={false}
-            />
+            <motion.div initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.3, delay: 0.2 }}>
+              <SportsProgramsSection
+                programs={form.sportsprogram}
+                add={addSport}
+                remove={removeSport}
+                set={setSport}
+                isAdmin={false}
+              />
+            </motion.div>
           )}
 
-          <AchievementsSection
-            values={form.achievements}
-            onChange={(k, v) => update("achievements", { ...form.achievements, [k]: v })}
-          />
+          <motion.div initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.3, delay: 0.25 }}>
+            <AchievementsSection
+              values={form.achievements}
+              onChange={(k, v) => update("achievements", { ...form.achievements, [k]: v })}
+            />
+          </motion.div>
 
-          <div className="flex items-center gap-3">
-            <button
+          <div className="flex items-center gap-3 justify-end">
+            <motion.button
               type="submit"
               disabled={loading}
               className="inline-flex items-center justify-center rounded-lg bg-indigo-600 px-5 py-2.5 text-white font-medium shadow-sm hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/40 disabled:opacity-60"
+              whileHover={{ y: -2 }}
+              whileTap={{ y: 0 }}
             >
               {loading ? "Saving..." : "Create Academy"}
-            </button>
-            <button
+            </motion.button>
+            <motion.button
               type="button"
               onClick={() => router.back()}
               disabled={loading}
               className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-slate-700 hover:bg-slate-50 shadow-sm"
+              whileHover={{ y: -2 }}
+              whileTap={{ y: 0 }}
             >
               Cancel
-            </button>
+            </motion.button>
           </div>
         </form>
       </div>

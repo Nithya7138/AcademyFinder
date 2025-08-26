@@ -11,7 +11,7 @@ import { fieldsetClass, legendClass, inputClass, gridTwoCols } from "./styles";
 export default function CoordinatesSection({ lat, lng, onChange }: Props) {
   return (
     <fieldset className={fieldsetClass}>
-      <legend className={legendClass}>Location Coordinates *</legend>
+      <div className={legendClass}>Location Coordinates *</div>
       <div className={gridTwoCols}>
         <input type="number" placeholder="Latitude" className={inputClass}
                value={lat} onChange={(e) => onChange("lat", e.target.value === "" ? "" : Number(e.target.value))} required />

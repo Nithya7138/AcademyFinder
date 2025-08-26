@@ -17,9 +17,9 @@ import { fieldsetClass, gridTwoCols, legendClass, inputClass, selectClass } from
 export default function BasicInfo({ values, onChange }: Props) {
   return (
     <fieldset className={fieldsetClass}>
-      <div className={gridTwoCols}>
-        <label className="block">
-          <legend className={`${legendClass} pb-4`}>Basic Info</legend>
+      <legend className={`${legendClass} pb-4`}>Basic Info</legend>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <label className="block md:col-span-2">
           <span className="text-sm text-slate-700">Name *</span>
           <input
             className={inputClass}
@@ -42,7 +42,9 @@ export default function BasicInfo({ values, onChange }: Props) {
             <option value="Sports">Sports</option>
           </select>
         </label>
+      </div>
 
+      <div className={gridTwoCols}>
         <label className="block">
           <span className="text-sm text-slate-700">Phone *</span>
           <input

@@ -15,7 +15,7 @@ import { fieldsetClass, legendClass, inputClass, addButtonClass, removeButtonCla
 export default function SportsProgramsSection({ programs, add, remove, set, isAdmin = false }: Props) {
   return (
     <fieldset className={fieldsetClass}>
-      <legend className={legendClass}>Sports Programs</legend>
+      <div className={legendClass}>Sports Programs</div>
       <div className="space-y-3">
         {programs.map((p, idx) => (
           <div key={idx} className="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">

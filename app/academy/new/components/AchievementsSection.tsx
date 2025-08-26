@@ -12,7 +12,7 @@ import { fieldsetClass, legendClass, inputClass } from "./styles";
 export default function AchievementsSection({ values, onChange }: Props) {
   return (
     <fieldset className={fieldsetClass}>
-      <legend className={legendClass}>Achievements</legend>
+      <div className={legendClass}>Achievements</div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <input className={inputClass} placeholder="Awards"
                value={values.award} onChange={(e) => onChange("award", e.target.value)} />
