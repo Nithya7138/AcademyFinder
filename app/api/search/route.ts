@@ -146,7 +146,7 @@ export async function GET(req: Request) {
     const lng = Number(lngRaw);
     const hasGeo = Number.isFinite(lat) && Number.isFinite(lng);
     if (hasGeo && sort !== "distance") {
-      const effectiveRadiusKm = radiusKm > 0 ? radiusKm : 10; //! default 10km
+      const effectiveRadiusKm = radiusKm > 0 ? radiusKm : 50; //! default 10km
       type NearCondition = NonNullable<SearchQuery["location"]>["$near"];
       const nearCond: NearCondition = {
         $geometry: { type: "Point", coordinates: [lng, lat] },
